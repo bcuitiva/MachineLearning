@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weight Prediction — Linear Regression</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:      #f5f4f0;
+      --surface: #ffffff;
+      --border:  #d9d7d0;
+      --text:    #111110;
+      --muted:   #7a7870;
+      --radius:  4px;
+      --mono:    'IBM Plex Mono', monospace;
+      --sans:    'IBM Plex Sans', sans-serif;
+      --tr:      0.22s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; flex-direction: column; }
+    .page { flex: 1; display: flex; flex-direction: column; max-width: 720px; margin: 0 auto; width: 100%; padding: 5rem 1.5rem 3rem; }
+
+    /* Back */
+    .back-link { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 3rem; transition: color var(--tr); }
+    .back-link:hover { color: var(--text); }
+
+    /* Header */
+    header { margin-bottom: 4rem; }
+    .eyebrow { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.1rem; }
+    h1 { font-family: var(--mono); font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; color: var(--text); margin-bottom: 0.6rem; }
+    .subtitle { font-family: var(--sans); font-size: 1rem; font-weight: 300; color: var(--muted); }
+    .rule { width: 32px; height: 1px; background: var(--text); margin: 1.6rem 0 0; }
+
+    /* Section label */
+    .section-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; margin-top: 2.5rem; }
+
+    /* Content block */
+    .content-block { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.4rem 1.6rem; margin-bottom: 0.5rem; }
+    .block-title { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); margin-bottom: 0.75rem; }
+    .content-block p { font-size: 0.9rem; font-weight: 300; color: var(--text); line-height: 1.7; margin-bottom: 0.5rem; }
+    .content-block p:last-child { margin-bottom: 0; }
+    .content-block ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .content-block ul li { font-size: 0.88rem; font-weight: 300; color: var(--text); padding-left: 1.4rem; position: relative; line-height: 1.5; }
+    .content-block ul li::before { content: '—'; position: absolute; left: 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; }
+    .content-block ul li strong { font-weight: 500; }
+
+    /* Stats grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; }
+    .stat-item { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 0.9rem 1rem; }
+    .stat-key { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
+    .stat-val { font-family: var(--mono); font-size: 1rem; font-weight: 600; color: var(--text); }
+    .stat-sub { font-size: 0.7rem; font-weight: 300; color: var(--muted); margin-top: 0.15rem; }
+
+    /* Variables table */
+    .var-table { width: 100%; border-collapse: collapse; }
+    .var-table thead tr { border-bottom: 1px solid var(--border); }
+    .var-table th { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); padding: 0.5rem 0.6rem; text-align: left; font-weight: 400; }
+    .var-table td { font-size: 0.82rem; font-weight: 300; color: var(--text); padding: 0.65rem 0.6rem; border-bottom: 1px solid var(--border); line-height: 1.4; }
+    .var-table tr:last-child td { border-bottom: none; }
+    .var-table td:first-child { font-family: var(--mono); font-size: 0.75rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+    .badge { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--border); border-radius: 2px; padding: 0.12rem 0.4rem; color: var(--muted); white-space: nowrap; }
+
+    /* Prep steps */
+    .steps { display: flex; flex-direction: column; }
+    .step { display: flex; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid var(--border); }
+    .step:last-child { border-bottom: none; padding-bottom: 0; }
+    .step:first-child { padding-top: 0; }
+    .step-num { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); flex-shrink: 0; min-width: 1.4rem; padding-top: 0.1rem; }
+    .step-body { display: flex; flex-direction: column; gap: 0.2rem; }
+    .step-title { font-size: 0.88rem; font-weight: 500; color: var(--text); }
+    .step-desc { font-size: 0.78rem; font-weight: 300; color: var(--muted); line-height: 1.5; }
+
+    /* Chart */
+    .chart-wrap { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.4rem 1.6rem; margin-bottom: 0.5rem; }
+    .chart-meta { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .chart-container { position: relative; height: 300px; }
+
+    /* Interpretation */
+    .interp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .interp-item { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1rem 1.2rem; }
+    .interp-key { font-family: var(--mono); font-size: 0.56rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+    .interp-val { font-family: var(--mono); font-size: 1.1rem; font-weight: 600; color: var(--text); }
+    .interp-desc { font-size: 0.75rem; font-weight: 300; color: var(--muted); margin-top: 0.25rem; line-height: 1.4; }
+
+    /* Form */
+    .form-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.6rem; margin-bottom: 0.5rem; }
+    .group-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border); }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.1rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { font-size: 0.8rem; font-weight: 500; color: var(--text); }
+    .field .hint { font-size: 0.72rem; font-weight: 300; color: var(--muted); }
+    input[type="number"], select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.65rem 0.85rem; font-family: var(--sans); font-size: 0.88rem; color: var(--text); outline: none; transition: border-color var(--tr); appearance: none; -webkit-appearance: none; }
+    input[type="number"]:focus, select:focus { border-color: var(--text); }
+    .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .btn-predict { width: 100%; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius); padding: 0.95rem; font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; margin-top: 1.5rem; transition: opacity var(--tr); }
+    .btn-predict:hover { opacity: 0.8; }
+
+    /* Result */
+    .result-block { border: 1px solid var(--text); border-radius: var(--radius); background: var(--text); padding: 2rem 1.6rem; margin-bottom: 0.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; animation: fadeUp 0.5s ease both; }
+    .result-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,244,240,0.5); }
+    .result-value { font-family: var(--mono); font-size: clamp(3rem, 10vw, 5rem); font-weight: 600; color: #f5f4f0; line-height: 1; letter-spacing: -0.04em; }
+    .result-unit { font-family: var(--mono); font-size: 1rem; color: rgba(245,244,240,0.6); letter-spacing: 0.08em; }
+    .result-range { font-family: var(--sans); font-size: 0.78rem; font-weight: 300; color: rgba(245,244,240,0.45); margin-top: 0.25rem; }
+
+    /* Footer */
+    footer { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 2rem; }
+    .footer-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .members { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.4rem; }
+    .member { font-size: 0.88rem; font-weight: 400; color: var(--text); }
+    .university { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.08em; color: var(--muted); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 520px) {
+      .page { padding: 3rem 1.2rem 2rem; }
+      .fields-row { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .interp-grid { grid-template-columns: 1fr; }
+      .var-table { font-size: 0.78rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <a href="{{ url_for('linearRM') }}" class="back-link">&#8592; Linear Regression</a>
+
+  <header>
+    <p class="eyebrow">Module 02 &middot; Linear Regression</p>
+    <h1>Weight Prediction</h1>
+    <p class="subtitle">Predicting body weight from personal, dietary and lifestyle variables using Ordinary Least Squares regression</p>
+    <div class="rule"></div>
+  </header>
+
+  <main>
+
+    <!-- ── 1. Problem Description ── -->
+    <p class="section-label">01 &mdash; Problem Description</p>
+    <div class="content-block">
+      <p class="block-title">What problem does this model solve?</p>
+      <p>Obesity and excess body weight are among the most significant public health challenges worldwide, contributing to cardiovascular disease, diabetes, and reduced life expectancy. Monitoring and predicting body weight from lifestyle and dietary habits enables early identification of risk factors.</p>
+      <p>This model applies <strong>Linear Regression</strong> to predict a person's body weight (in kg) from a set of 15 input variables covering personal characteristics, eating habits, and lifestyle. The goal is to estimate a continuous numerical value — weight — based on patterns learned from real survey data collected from individuals in Mexico, Peru, and Colombia.</p>
+    </div>
+    <div class="content-block">
+      <p class="block-title">Why Linear Regression?</p>
+      <p>Linear Regression models the relationship between input variables and a continuous output by fitting a linear equation to the observed data. It is interpretable, computationally efficient, and well-suited for establishing a baseline prediction when the target variable is numerical — as is the case with body weight in kilograms.</p>
+    </div>
+
+    <!-- ── 2. Dataset ── -->
+    <p class="section-label">02 &mdash; Dataset</p>
+    <div class="content-block">
+      <p class="block-title">Obesity Dataset — Raw &amp; Synthetic</p>
+      <p>The dataset was created from survey data collected in Mexico, Peru, and Colombia, supplemented with synthetically generated records using SMOTE (Synthetic Minority Over-sampling Technique) to balance class distribution. It covers individuals between the ages of 14 and 61.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <p class="stat-key">Total records</p>
+        <p class="stat-val">2,111</p>
+        <p class="stat-sub">Rows in dataset</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Features</p>
+        <p class="stat-val">15</p>
+        <p class="stat-sub">Input variables</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Target variable</p>
+        <p class="stat-val">Weight</p>
+        <p class="stat-sub">Continuous, in kg</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Weight range</p>
+        <p class="stat-val">39 – 173 kg</p>
+        <p class="stat-sub">Min – Max</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Mean weight</p>
+        <p class="stat-val">86.6 kg</p>
+        <p class="stat-sub">Std: 26.2 kg</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Age range</p>
+        <p class="stat-val">14 – 61 yr</p>
+        <p class="stat-sub">Mean: 24.3 yr</p>
+      </div>
+    </div>
+
+    <!-- ── 3. Variables ── -->
+    <p class="section-label">03 &mdash; Variables Used</p>
+    <div class="content-block">
+      <table class="var-table">
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Age</td><td><span class="badge">Numeric</span></td><td>Age of the individual in years</td></tr>
+          <tr><td>Gender</td><td><span class="badge">Categorical</span></td><td>Male / Female</td></tr>
+          <tr><td>Height</td><td><span class="badge">Numeric</span></td><td>Height in meters</td></tr>
+          <tr><td>FAVC</td><td><span class="badge">Categorical</span></td><td>Frequent consumption of high-caloric food (yes/no)</td></tr>
+          <tr><td>FCVC</td><td><span class="badge">Numeric</span></td><td>Frequency of vegetable consumption (1–3)</td></tr>
+          <tr><td>NCP</td><td><span class="badge">Numeric</span></td><td>Number of main meals per day (1–4)</td></tr>
+          <tr><td>CAEC</td><td><span class="badge">Categorical</span></td><td>Food consumption between meals</td></tr>
+          <tr><td>SMOKE</td><td><span class="badge">Categorical</span></td><td>Smoking habit (yes/no)</td></tr>
+          <tr><td>CH2O</td><td><span class="badge">Numeric</span></td><td>Daily water consumption (1–3 scale)</td></tr>
+          <tr><td>SCC</td><td><span class="badge">Categorical</span></td><td>Calories consumption monitoring (yes/no)</td></tr>
+          <tr><td>FAF</td><td><span class="badge">Numeric</span></td><td>Physical activity frequency (0–3)</td></tr>
+          <tr><td>TUE</td><td><span class="badge">Numeric</span></td><td>Time using technology devices (0–2)</td></tr>
+          <tr><td>CALC</td><td><span class="badge">Categorical</span></td><td>Alcohol consumption frequency</td></tr>
+          <tr><td>MTRANS</td><td><span class="badge">Categorical</span></td><td>Mode of transportation</td></tr>
+          <tr><td>family_history</td><td><span class="badge">Categorical</span></td><td>Family history with overweight (yes/no)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── 4. Data Preparation ── -->
+    <p class="section-label">04 &mdash; Data Preparation</p>
+    <div class="content-block">
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01</span>
+          <div class="step-body">
+            <span class="step-title">Target separation</span>
+            <span class="step-desc">The <code>Weight</code> column was isolated as the target variable (y). The <code>NObeyesdad</code> column (obesity category) was also removed from inputs to avoid data leakage, since it is derived from weight.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <div class="step-body">
+            <span class="step-title">Categorical encoding — OneHotEncoder</span>
+            <span class="step-desc">All categorical columns (Gender, FAVC, CAEC, SMOKE, SCC, CALC, MTRANS, family_history) were transformed using <strong>OneHotEncoding with drop='first'</strong> to avoid multicollinearity. This converts each category into binary columns.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <div class="step-body">
+            <span class="step-title">ColumnTransformer pipeline</span>
+            <span class="step-desc">A <strong>ColumnTransformer</strong> was used to apply OneHotEncoding only to categorical columns while passing numeric columns through unchanged (remainder='passthrough').</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">04</span>
+          <div class="step-body">
+            <span class="step-title">Train / Test split</span>
+            <span class="step-desc">The data was split into <strong>80% training (1,688 records)</strong> and <strong>20% test (423 records)</strong> using <code>train_test_split</code> with <code>random_state=42</code> for reproducibility.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">05</span>
+          <div class="step-body">
+            <span class="step-title">Model training</span>
+            <span class="step-desc">Scikit-learn's <strong>LinearRegression</strong> (Ordinary Least Squares) was fitted on the training set. The model learns coefficients for each encoded feature that minimize the sum of squared residuals.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 5. Model Performance ── -->
+    <p class="section-label">05 &mdash; Model Performance</p>
+    <div class="interp-grid" style="margin-bottom: 0.5rem;">
+      <div class="interp-item">
+        <p class="interp-key">R² Score</p>
+        <p class="interp-val">0.579</p>
+        <p class="interp-desc">The model explains 57.9% of the variance in body weight from the input features.</p>
+      </div>
+      <div class="interp-item">
+        <p class="interp-key">MAE</p>
+        <p class="interp-val">13.82 kg</p>
+        <p class="interp-desc">On average, predictions deviate 13.82 kg from the actual weight.</p>
+      </div>
+      <div class="interp-item">
+        <p class="interp-key">RMSE</p>
+        <p class="interp-val">17.23 kg</p>
+        <p class="interp-desc">Root Mean Squared Error — penalizes larger prediction errors more heavily.</p>
+      </div>
+      <div class="interp-item">
+        <p class="interp-key">Test set</p>
+        <p class="interp-val">423 records</p>
+        <p class="interp-desc">20% of the dataset held out for unbiased evaluation of model performance.</p>
+      </div>
+    </div>
+
+    <!-- ── 6. Regression Graph ── -->
+    <p class="section-label">06 &mdash; Regression Graph</p>
+    <div class="chart-wrap">
+      <p class="chart-meta">Actual vs Predicted Weight &nbsp;·&nbsp; Test set &nbsp;·&nbsp; Weight in kg</p>
+      <div class="chart-container">
+        <canvas id="regressionChart"></canvas>
+      </div>
+    </div>
+
+    <!-- ── 7. Interpretation of Results ── -->
+    <p class="section-label">07 &mdash; Interpretation of Results</p>
+    <div class="content-block">
+      <p class="block-title">What do the metrics mean?</p>
+      <p>The R² score of <strong>0.579</strong> indicates that the model captures a moderate portion of the variability in body weight. While the fit is not perfect, this is expected given that weight is influenced by genetic, hormonal, and metabolic factors not captured in the survey variables.</p>
+      <p>The <strong>MAE of 13.82 kg</strong> means that on average, the model's estimate is within about 14 kg of the actual weight — acceptable for a first-order predictive baseline, but insufficient for clinical-grade precision.</p>
+    </div>
+    <div class="content-block">
+      <p class="block-title">Key observations from the scatter plot</p>
+      <ul>
+        <li>Points close to the diagonal line represent accurate predictions.</li>
+        <li>The model tends to <strong>overestimate low weights</strong> and <strong>underestimate very high weights</strong>, a common pattern in linear regression when the relationship is not perfectly linear.</li>
+        <li>Height and family history with overweight are the strongest predictors in this dataset.</li>
+        <li>A non-linear model (e.g. Random Forest, Gradient Boosting) would likely improve performance significantly.</li>
+      </ul>
+    </div>
+    <div class="content-block">
+      <p class="block-title">Limitations</p>
+      <ul>
+        <li>Linear Regression assumes a linear relationship between inputs and weight, which may not hold across all weight ranges.</li>
+        <li>The model does not account for muscle mass, body composition, or genetic factors.</li>
+        <li>A large portion of the dataset was synthetically generated, which may introduce bias in the learned patterns.</li>
+      </ul>
+    </div>
+
+    <!-- ── 8. Result (if available) ── -->
+    {% if resultado %}
+    <p class="section-label">Prediction Result</p>
+    <div class="result-block">
+      <span class="result-label">Estimated Body Weight</span>
+      <span class="result-value">{{ "%.1f"|format(resultado) }}</span>
+      <span class="result-unit">kg</span>
+      <span class="result-range">Dataset range: 39.0 – 173.0 kg &nbsp;·&nbsp; Mean: 86.6 kg &nbsp;·&nbsp; Std: 26.2 kg</span>
+    </div>
+    {% endif %}
+
+    <!-- ── 9. Prediction Form ── -->
+    <p class="section-label">08 &mdash; Prediction Form</p>
+
+    <form action="/LinearRegressionWeight" method="POST">
+
+      <div class="form-card" style="margin-bottom:0.5rem;">
+        <p class="group-label">Personal Information</p>
+        <div class="fields-row">
+          <div class="field">
+            <label for="Age">Age</label>
+            <span class="hint">Years (14 – 61)</span>
+            <input type="number" id="Age" name="Age" min="10" max="100" required />
+          </div>
+          <div class="field">
+            <label for="Height">Height</label>
+            <span class="hint">Meters — e.g. 1.75</span>
+            <input type="number" step="0.01" id="Height" name="Height" min="1.2" max="2.2" required />
+          </div>
+        </div>
+        <div class="fields-row">
+          <div class="field">
+            <label for="Gender">Gender</label>
+            <select id="Gender" name="Gender">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="family_history_with_overweight">Family history of overweight</label>
+            <select id="family_history_with_overweight" name="family_history_with_overweight">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card" style="margin-bottom:0.5rem;">
+        <p class="group-label">Eating Habits</p>
+        <div class="fields-row">
+          <div class="field">
+            <label for="FAVC">High-caloric food consumption (FAVC)</label>
+            <select id="FAVC" name="FAVC">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="FCVC">Vegetable consumption frequency (FCVC)</label>
+            <span class="hint">1 = Never &nbsp;·&nbsp; 3 = Always</span>
+            <input type="number" step="0.1" id="FCVC" name="FCVC" min="1" max="3" />
+          </div>
+        </div>
+        <div class="fields-row">
+          <div class="field">
+            <label for="NCP">Number of main meals (NCP)</label>
+            <span class="hint">1 – 4 meals per day</span>
+            <input type="number" step="0.1" id="NCP" name="NCP" min="1" max="4" />
+          </div>
+          <div class="field">
+            <label for="CAEC">Food between meals (CAEC)</label>
+            <select id="CAEC" name="CAEC">
+              <option value="no">No</option>
+              <option value="Sometimes">Sometimes</option>
+              <option value="Frequently">Frequently</option>
+              <option value="Always">Always</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="CALC">Alcohol consumption (CALC)</label>
+          <select id="CALC" name="CALC">
+            <option value="no">No</option>
+            <option value="Sometimes">Sometimes</option>
+            <option value="Frequently">Frequently</option>
+            <option value="Always">Always</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <p class="group-label">Lifestyle</p>
+        <div class="fields-row">
+          <div class="field">
+            <label for="SMOKE">Smoking habit (SMOKE)</label>
+            <select id="SMOKE" name="SMOKE">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="SCC">Calorie monitoring (SCC)</label>
+            <select id="SCC" name="SCC">
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+        </div>
+        <div class="fields-row">
+          <div class="field">
+            <label for="CH2O">Daily water intake (CH2O)</label>
+            <span class="hint">1 = &lt;1L &nbsp;·&nbsp; 2 = 1–2L &nbsp;·&nbsp; 3 = &gt;2L</span>
+            <input type="number" step="0.1" id="CH2O" name="CH2O" min="1" max="3" />
+          </div>
+          <div class="field">
+            <label for="FAF">Physical activity frequency (FAF)</label>
+            <span class="hint">0 = None &nbsp;·&nbsp; 3 = Daily</span>
+            <input type="number" step="0.1" id="FAF" name="FAF" min="0" max="3" />
+          </div>
+        </div>
+        <div class="fields-row">
+          <div class="field">
+            <label for="TUE">Daily screen time (TUE)</label>
+            <span class="hint">0 = &lt;1h &nbsp;·&nbsp; 2 = &gt;5h</span>
+            <input type="number" step="0.1" id="TUE" name="TUE" min="0" max="2" />
+          </div>
+          <div class="field">
+            <label for="MTRANS">Mode of transportation (MTRANS)</label>
+            <select id="MTRANS" name="MTRANS">
+              <option value="Walking">Walking</option>
+              <option value="Public_Transportation">Public Transportation</option>
+              <option value="Automobile">Automobile</option>
+              <option value="Motorbike">Motorbike</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-predict">Run Prediction</button>
+    </form>
+
+  </main>
+
+  <footer>
+    <p class="footer-label">Group Members</p>
+    <div class="members">
+      <span class="member">Elkin Yamith Almonacid López</span>
+      <span class="member">Brayan David Cuitiva Umbarila</span>
+      <span class="member">Brayan Yair Mendez Rodriguez</span>
+    </div>
+    <p class="university">Universidad de Cundinamarca</p>
+  </footer>
+
+</div>
+
+<script>
+  const actual    = JSON.parse('{{ actual | tojson | safe }}');
+  const predicted = JSON.parse('{{ predicted | tojson | safe }}');
+  const userPoint = JSON.parse('{{ user_point | tojson | safe }}');
+
+  const validUserPoint = userPoint && userPoint.x !== undefined && userPoint.y !== undefined
+    ? userPoint : null;
+
+  const minVal = Math.min(...actual, ...predicted) - 5;
+  const maxVal = Math.max(...actual, ...predicted) + 5;
+
+  const ctx = document.getElementById('regressionChart').getContext('2d');
+  new Chart(ctx, {
+    data: {
+      datasets: [
+        {
+          type: 'scatter',
+          label: 'Test samples',
+          data: actual.map((a, i) => ({ x: a, y: predicted[i] })),
+          backgroundColor: 'rgba(17,17,16,0.45)',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        ...(validUserPoint ? [{
+          type: 'scatter',
+          label: 'Your prediction',
+          data: [validUserPoint],
+          backgroundColor: '#c0392b',
+          borderColor: '#c0392b',
+          pointRadius: 7,
+          pointHoverRadius: 9,
+          pointStyle: 'circle',
+        }] : []),
+        {
+          type: 'line',
+          label: 'Perfect prediction',
+          data: [{ x: minVal, y: minVal }, { x: maxVal, y: maxVal }],
+          borderColor: '#111110',
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870', boxWidth: 12, padding: 16 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              if (ctx.datasetIndex === 0)
+                return ` Actual: ${ctx.parsed.x} kg  |  Predicted: ${ctx.parsed.y.toFixed(1)} kg`;
+              if (ctx.datasetIndex === 1)
+                return ` Your prediction: ${ctx.parsed.y.toFixed(1)} kg`;
+              return null;
+            }
+          },
+          titleFont: { family: "'IBM Plex Mono'", size: 11 },
+          bodyFont: { family: "'IBM Plex Sans'", size: 11 },
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Actual Weight (kg)', font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          ticks: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          grid: { color: '#e8e6e0' },
+          min: minVal, max: maxVal,
+        },
+        y: {
+          title: { display: true, text: 'Predicted Weight (kg)', font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          ticks: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          grid: { color: '#e8e6e0' },
+          min: minVal, max: maxVal,
+        }
+      }
+    }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
