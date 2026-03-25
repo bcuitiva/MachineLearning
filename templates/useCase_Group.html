@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content Recommendation — Instagram</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #f5f4f0;
+      --surface: #ffffff;
+      --border:  #d9d7d0;
+      --text:    #111110;
+      --muted:   #7a7870;
+      --radius:  4px;
+      --mono:    'IBM Plex Mono', monospace;
+      --sans:    'IBM Plex Sans', sans-serif;
+      --tr:      0.22s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; flex-direction: column; }
+    .page { flex: 1; display: flex; flex-direction: column; max-width: 720px; margin: 0 auto; width: 100%; padding: 5rem 1.5rem 3rem; }
+    .back-link { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 3rem; transition: color var(--tr); }
+    .back-link:hover { color: var(--text); }
+    header { margin-bottom: 4rem; }
+    .eyebrow { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.1rem; }
+    h1 { font-family: var(--mono); font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; color: var(--text); margin-bottom: 0.6rem; }
+    .subtitle { font-family: var(--sans); font-size: 1rem; font-weight: 300; color: var(--muted); letter-spacing: 0.01em; }
+    .rule { width: 32px; height: 1px; background: var(--text); margin: 1.6rem 0 0; }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .summary-item { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1rem 1.2rem; }
+    .summary-item.full { grid-column: 1 / -1; }
+    .summary-key { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.45rem; }
+    .summary-val { font-size: 0.88rem; font-weight: 400; color: var(--text); line-height: 1.5; }
+    .section-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; margin-top: 2.5rem; }
+    .content-block { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.4rem 1.6rem; margin-bottom: 0.5rem; }
+    .block-title { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); margin-bottom: 0.75rem; }
+    .content-block p { font-size: 0.9rem; font-weight: 300; color: var(--text); line-height: 1.7; margin-bottom: 0.5rem; }
+    .content-block p:last-child { margin-bottom: 0; }
+    .content-block ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .content-block ul li { font-size: 0.88rem; font-weight: 300; color: var(--text); padding-left: 1.4rem; position: relative; line-height: 1.5; }
+    .content-block ul li::before { content: '—'; position: absolute; left: 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; }
+    .content-block ul li strong { font-weight: 500; }
+    .steps { display: flex; flex-direction: column; gap: 0; }
+    .step { display: flex; align-items: flex-start; gap: 1rem; padding: 0.85rem 0; border-bottom: 1px solid var(--border); }
+    .step:last-child { border-bottom: none; padding-bottom: 0; }
+    .step:first-child { padding-top: 0; }
+    .step-num { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.1em; color: var(--muted); flex-shrink: 0; padding-top: 0.1rem; min-width: 1.6rem; }
+    .step-text { font-size: 0.88rem; font-weight: 300; color: var(--text); line-height: 1.5; }
+    .techniques { display: flex; flex-direction: column; gap: 0.5rem; }
+    .technique { display: flex; align-items: baseline; gap: 0.75rem; }
+    .technique-tag { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--border); border-radius: 2px; padding: 0.18rem 0.5rem; flex-shrink: 0; white-space: nowrap; }
+    .technique-desc { font-size: 0.85rem; font-weight: 300; color: var(--text); }
+    .prose { font-size: 0.9rem; font-weight: 300; color: var(--text); line-height: 1.75; margin-bottom: 0.75rem; }
+    footer { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 2rem; }
+    .footer-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .members { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.4rem; }
+    .member { font-size: 0.88rem; font-weight: 400; color: var(--text); }
+    .university { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.08em; color: var(--muted); }
+    @media (max-width: 520px) {
+      .page { padding: 3rem 1.2rem 2rem; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .summary-item.full { grid-column: 1; }
+      .technique { flex-direction: column; gap: 0.3rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <a href="{{ url_for('useCases') }}" class="back-link">&#8592; Use Cases</a>
+
+  <header>
+    <p class="eyebrow">Use Case 04 &middot; Content Recommendation</p>
+    <h1>Personalized Feed System</h1>
+    <p class="subtitle">How Instagram uses machine learning to deliver tailored content at scale</p>
+    <div class="rule"></div>
+  </header>
+
+  <main>
+
+    <p class="section-label">Case Overview</p>
+    <div class="summary-grid">
+      <div class="summary-item full">
+        <p class="summary-key">Title</p>
+        <p class="summary-val">Content Recommendation System for Social Media</p>
+      </div>
+      <div class="summary-item full">
+        <p class="summary-key">Problem Description</p>
+        <p class="summary-val">With billions of posts available, displaying content in chronological order is no longer effective. Instagram must predict, in real time, which content each user is most likely to engage with — out of millions of candidates — and rank it accordingly to maximize relevance and retention.</p>
+      </div>
+      <div class="summary-item">
+        <p class="summary-key">Type of Machine Learning</p>
+        <p class="summary-val">Collaborative Filtering · Content-Based Filtering · Hybrid Models</p>
+      </div>
+      <div class="summary-item">
+        <p class="summary-key">Expected Output</p>
+        <p class="summary-val">Ranked personalized feed — ordered list of posts by predicted engagement probability</p>
+      </div>
+      <div class="summary-item full">
+        <p class="summary-key">Input Data</p>
+        <p class="summary-val">User interactions (likes, comments, shares) · Watch time · Relationships with other users · Post recency · Content type (photo, video, reel)</p>
+      </div>
+      <div class="summary-item full">
+        <p class="summary-key">Real-World Relevance</p>
+        <p class="summary-val">Instagram serves over 2 billion active users monthly. Its recommendation engine directly influences content discovery, creator reach, and user retention. The system must process and rank content at massive scale, in milliseconds, for every session across all users simultaneously.</p>
+      </div>
+    </div>
+
+    <p class="section-label">01 &mdash; Introduction</p>
+    <div class="content-block">
+      <p>Instagram uses Machine Learning to personalize the content that users see every day. Instead of displaying posts in chronological order, the platform predicts what content each user is most likely to enjoy based on behavioral patterns.</p>
+    </div>
+
+    <p class="section-label">02 &mdash; How the recommendation system works</p>
+    <div class="content-block">
+      <p>The system analyzes user behavior such as likes, comments, shares, and watch time. These interactions are used to understand individual preferences and continuously update each user's dynamic profile.</p>
+      <p>Machine Learning models process this data to rank and display the most relevant content for each user in real time.</p>
+    </div>
+
+    <p class="section-label">03 &mdash; Main factors used by the algorithm</p>
+    <div class="content-block">
+      <ul>
+        <li>User interactions — likes, comments, shares</li>
+        <li>Watch time on content</li>
+        <li>Relationship with other users</li>
+        <li>Recency of posts</li>
+        <li>Type of content — photos, videos, reels</li>
+      </ul>
+    </div>
+
+    <p class="section-label">04 &mdash; Personalization process</p>
+    <div class="content-block">
+      <p>Instagram builds a dynamic profile for each user based on their activity. Every interaction helps refine recommendations and improve accuracy over time, creating an increasingly tailored experience with each session.</p>
+    </div>
+
+    <p class="section-label">05 &mdash; Ranking system</p>
+    <div class="content-block">
+      <p>The platform evaluates thousands of posts and assigns a relevance score based on predicted engagement probability. The pipeline follows four stages:</p>
+      <div class="steps" style="margin-top: 1rem;">
+        <div class="step">
+          <span class="step-num">01</span>
+          <span class="step-text">Collect candidate posts from across the platform.</span>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <span class="step-text">Evaluate relevance using behavioral signals.</span>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <span class="step-text">Rank content by predicted engagement score.</span>
+        </div>
+        <div class="step">
+          <span class="step-num">04</span>
+          <span class="step-text">Display top results in the user's feed.</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-label">06 &mdash; Recommendation techniques</p>
+    <div class="content-block">
+      <div class="techniques">
+        <div class="technique">
+          <span class="technique-tag">Collaborative</span>
+          <span class="technique-desc">Filtering based on users with similar behavioral patterns.</span>
+        </div>
+        <div class="technique">
+          <span class="technique-tag">Content-Based</span>
+          <span class="technique-desc">Filtering based on the user's own interaction history.</span>
+        </div>
+        <div class="technique">
+          <span class="technique-tag">Hybrid</span>
+          <span class="technique-desc">Combination of both approaches for improved accuracy at scale.</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="section-label">07 &mdash; Challenges</p>
+    <div class="content-block">
+      <ul>
+        <li>Cold start problem for new users or newly published content.</li>
+        <li>Bias in recommendations amplifying certain types of content.</li>
+        <li>Content bubbles and filter echo chambers.</li>
+        <li>Real-time data processing at massive scale.</li>
+      </ul>
+    </div>
+
+    <p class="section-label">08 &mdash; Ethical considerations</p>
+    <div class="content-block">
+      <p>Recommendation systems can influence user behavior and content exposure at a significant scale. Responsible design is necessary to avoid negative effects such as addiction, misinformation, or the amplification of harmful content.</p>
+    </div>
+
+  </main>
+
+  <footer>
+    <p class="footer-label">Group Members</p>
+    <div class="members">
+      <span class="member">Elkin Yamith Almonacid López</span>
+      <span class="member">Brayan David Cuitiva Umbarila</span>
+      <span class="member">Brayan Yair Mendez Rodriguez</span>
+    </div>
+    <p class="university">Universidad de Cundinamarca</p>
+  </footer>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
