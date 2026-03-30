@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logistic Regression — Basic Concepts</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:      #f5f4f0;
+      --surface: #ffffff;
+      --border:  #d9d7d0;
+      --text:    #111110;
+      --muted:   #7a7870;
+      --accent:  #2a6496;
+      --radius:  4px;
+      --mono:    'IBM Plex Mono', monospace;
+      --sans:    'IBM Plex Sans', sans-serif;
+      --tr:      0.22s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; flex-direction: column; }
+    .page { flex: 1; display: flex; flex-direction: column; max-width: 720px; margin: 0 auto; width: 100%; padding: 5rem 1.5rem 3rem; }
+
+    .back-link { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 3rem; transition: color var(--tr); }
+    .back-link:hover { color: var(--text); }
+
+    header { margin-bottom: 4rem; }
+    .eyebrow { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.1rem; }
+    h1 { font-family: var(--mono); font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; color: var(--text); margin-bottom: 0.6rem; }
+    .subtitle { font-family: var(--sans); font-size: 1rem; font-weight: 300; color: var(--muted); }
+    .rule { width: 32px; height: 1px; background: var(--text); margin: 1.6rem 0 0; }
+
+    .section-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; margin-top: 2.5rem; }
+
+    .content-block { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.4rem 1.6rem; margin-bottom: 0.5rem; }
+    .block-title { font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); margin-bottom: 0.7rem; }
+    .content-block p { font-size: 0.9rem; font-weight: 300; color: var(--text); line-height: 1.75; margin-bottom: 0.5rem; }
+    .content-block p:last-child { margin-bottom: 0; }
+    .content-block ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .content-block ul li { font-size: 0.88rem; font-weight: 300; color: var(--text); padding-left: 1.4rem; position: relative; line-height: 1.55; }
+    .content-block ul li::before { content: '—'; position: absolute; left: 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; }
+    .content-block ul li strong { font-weight: 500; }
+
+    /* Formula */
+    .formula-block { border: 1px solid var(--text); border-radius: var(--radius); background: var(--text); padding: 1.4rem 1.6rem; margin-bottom: 0.5rem; text-align: center; }
+    .formula { font-family: var(--mono); font-size: clamp(1.0rem, 2.8vw, 1.35rem); font-weight: 600; color: var(--bg); letter-spacing: 0.04em; margin-bottom: 0.75rem; }
+    .formula-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem 1.2rem; }
+    .formula-item { font-family: var(--mono); font-size: 0.68rem; color: rgba(245,244,240,0.5); }
+    .formula-item span { color: rgba(245,244,240,0.9); }
+
+    /* Two col */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .def-block { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.1rem 1.3rem; }
+    .def-term { font-family: var(--mono); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); margin-bottom: 0.4rem; }
+    .def-body { font-size: 0.84rem; font-weight: 300; color: var(--text); line-height: 1.55; }
+    .def-example { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); margin-top: 0.4rem; }
+
+    /* Comparison table */
+    .compare-block { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; margin-bottom: 0.5rem; }
+    .compare-row { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+    .compare-row + .compare-row { border-top: 1px solid var(--border); }
+    .compare-cell { padding: 0.8rem 1rem; font-size: 0.84rem; font-weight: 300; color: var(--text); line-height: 1.45; }
+    .compare-cell:not(:last-child) { border-right: 1px solid var(--border); }
+    .compare-head { font-family: var(--mono); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
+
+    /* Binary badges */
+    .binary-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .binary-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.2rem 1.4rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .badge-num { font-family: var(--mono); font-size: 2.4rem; font-weight: 600; line-height: 1; }
+    .badge-num.zero { color: var(--muted); }
+    .badge-num.one { color: var(--text); }
+    .badge-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+    .badge-desc { font-size: 0.82rem; font-weight: 300; color: var(--text); line-height: 1.5; }
+
+    /* Feature tags */
+    .feature-wrap { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.2rem 1.4rem; margin-bottom: 0.5rem; }
+    .feature-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
+    .f-tag { font-family: var(--mono); font-size: 0.68rem; background: var(--bg); border: 1px solid var(--border); border-radius: 2px; padding: 0.3rem 0.6rem; color: var(--text); }
+    .feature-desc { font-size: 0.88rem; font-weight: 300; color: var(--text); line-height: 1.7; }
+
+    /* Threshold visual */
+    .threshold-wrap { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.4rem 1.6rem; margin-bottom: 0.5rem; }
+    .threshold-bar { position: relative; height: 40px; background: linear-gradient(to right, #e8e6e0 0%, #e8e6e0 50%, #111110 50%, #111110 100%); border-radius: 2px; margin: 1rem 0 0.5rem; overflow: hidden; }
+    .threshold-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #c0392b; transform: translateX(-50%); z-index: 2; }
+    .threshold-line::after { content: '0.5'; position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 0.6rem; color: #c0392b; white-space: nowrap; }
+    .threshold-labels { display: flex; justify-content: space-between; }
+    .threshold-label { font-family: var(--mono); font-size: 0.62rem; color: var(--muted); }
+
+    /* Example row */
+    .example-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; }
+    .example-cell { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 0.9rem 1rem; }
+    .example-key { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
+    .example-val { font-size: 0.88rem; font-weight: 400; color: var(--text); }
+    .example-val.positive { color: #1a5c34; }
+    .example-val.negative { color: var(--muted); }
+
+    /* Code line */
+    .code-line { font-family: var(--mono); font-size: 0.82rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 1rem; margin: 0.6rem 0; color: var(--text); }
+
+    footer { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 2rem; }
+    .footer-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .members { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.4rem; }
+    .member { font-size: 0.88rem; font-weight: 400; color: var(--text); }
+    .university { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.08em; color: var(--muted); }
+
+    @media (max-width: 520px) {
+      .page { padding: 3rem 1.2rem 2rem; }
+      .two-col, .binary-row, .example-row { grid-template-columns: 1fr; }
+      .compare-row { grid-template-columns: 1fr; }
+      .compare-cell:not(:last-child) { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <a href="{{ url_for('logisticRM') }}" class="back-link">&#8592; Logistic Regression</a>
+
+  <header>
+    <p class="eyebrow">Module 03 &middot; Theory</p>
+    <h1>Basic Concepts</h1>
+    <p class="subtitle">Core ideas behind logistic regression, explained simply</p>
+    <div class="rule"></div>
+  </header>
+
+  <main>
+
+    <!-- 01 What is Logistic Regression -->
+    <p class="section-label">01 &mdash; What is Logistic Regression?</p>
+    <div class="content-block">
+      <p>Logistic Regression is a supervised machine learning algorithm used to predict the <strong>probability</strong> that an observation belongs to one of two categories. Despite its name, it solves <strong>classification</strong> problems — not regression ones.</p>
+      <p>Instead of fitting a straight line through data, it applies the <strong>sigmoid function</strong> to map any real-valued input to a probability between 0 and 1. That probability is then used to assign a class label.</p>
+    </div>
+
+    <!-- 02 Regression vs Classification -->
+    <p class="section-label">02 &mdash; Regression vs Classification</p>
+    <div class="compare-block">
+      <div class="compare-row">
+        <div class="compare-cell compare-head"></div>
+        <div class="compare-cell compare-head">Linear Regression</div>
+        <div class="compare-cell compare-head">Logistic Regression</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-head">Task</div>
+        <div class="compare-cell">Predict a <strong>continuous number</strong></div>
+        <div class="compare-cell">Predict a <strong>category</strong></div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-head">Output</div>
+        <div class="compare-cell">Any real value (e.g. 92.0 kg)</div>
+        <div class="compare-cell">A probability → class label (0 or 1)</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-head">Example</div>
+        <div class="compare-cell">Predict a person's weight</div>
+        <div class="compare-cell">Predict if a person is obese</div>
+      </div>
+    </div>
+
+    <!-- 03 Binary Classification -->
+    <p class="section-label">03 &mdash; Binary Classification</p>
+    <div class="binary-row">
+      <div class="binary-card">
+        <span class="badge-num zero">0</span>
+        <span class="badge-label">Negative class</span>
+        <p class="badge-desc">The absence of the condition. The event did <strong>not</strong> occur.</p>
+        <p class="def-example" style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);">e.g. Not obese / No disease / Email is not spam</p>
+      </div>
+      <div class="binary-card">
+        <span class="badge-num one">1</span>
+        <span class="badge-label">Positive class</span>
+        <p class="badge-desc">The presence of the condition. The event <strong>did</strong> occur.</p>
+        <p class="def-example" style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);">e.g. Obese / Has disease / Email is spam</p>
+      </div>
+    </div>
+    <div class="content-block">
+      <p>Binary classification is the simplest form of classification — the model must decide between exactly <strong>two mutually exclusive outcomes</strong>. Every observation is assigned either 0 or 1 based on the estimated probability.</p>
+    </div>
+
+    <!-- 04 Target Variable / Class Label -->
+    <p class="section-label">04 &mdash; Target Variable &amp; Class Label</p>
+    <div class="two-col">
+      <div class="def-block">
+        <p class="def-term">Target Variable (Y)</p>
+        <p class="def-body">The outcome the model is trained to predict. In binary problems, it takes only the values 0 or 1.</p>
+        <p class="def-example">e.g. Obesity: 1 = obese, 0 = not obese</p>
+      </div>
+      <div class="def-block">
+        <p class="def-term">Class Label</p>
+        <p class="def-body">The actual category assigned to each training example. The model learns to distinguish these labels from the input features.</p>
+        <p class="def-example">e.g. "Spam" or "Not Spam"</p>
+      </div>
+    </div>
+
+    <!-- 05 Features / Predictors -->
+    <p class="section-label">05 &mdash; Features / Predictors</p>
+    <div class="feature-wrap">
+      <p class="feature-desc">Features (also called predictors or independent variables) are the input values used to make a prediction. Each feature provides information that helps the model distinguish between the two classes.</p>
+      <div class="feature-tags">
+        <span class="f-tag">Age</span>
+        <span class="f-tag">Income</span>
+        <span class="f-tag">Purchase History</span>
+        <span class="f-tag">Time on Site</span>
+        <span class="f-tag">Clicks</span>
+        <span class="f-tag">Email Opens</span>
+        <span class="f-tag">Location</span>
+        <span class="f-tag">Device Type</span>
+      </div>
+    </div>
+
+    <!-- 06 Probability Estimation & Sigmoid -->
+    <p class="section-label">06 &mdash; Probability Estimation</p>
+    <div class="formula-block">
+      <p class="formula">P(Y=1) &nbsp;=&nbsp; 1 &nbsp;/&nbsp; (1 &nbsp;+&nbsp; e<sup style="font-size:0.7em">−z</sup>)</p>
+      <div class="formula-legend">
+        <span class="formula-item"><span>P(Y=1)</span> — probability of class 1</span>
+        <span class="formula-item"><span>e</span> — Euler's number</span>
+        <span class="formula-item"><span>z</span> — β₀ + β₁x₁ + … + βₙxₙ</span>
+      </div>
+    </div>
+    <div class="content-block">
+      <p>The <strong>sigmoid function</strong> takes the linear combination of features and squashes it into a value between 0 and 1. This output is interpreted as the probability that the observation belongs to class 1.</p>
+    </div>
+    <!-- 07 Decision Boundary -->
+    <p class="section-label">07 &mdash; Decision Boundary</p>
+    <div class="content-block">
+      <p>The decision boundary is the line (or surface) that separates the two classes in feature space. All points on one side are classified as 1; all points on the other side as 0.</p>
+      <p>In a model with two features, the decision boundary is a straight line. With more features, it becomes a hyperplane — but the logic is the same: it is where the predicted probability equals <strong>0.5</strong>.</p>
+    </div>
+
+    <!-- 08 Classification Threshold -->
+    <p class="section-label">08 &mdash; Classification Threshold</p>
+    <div class="threshold-wrap">
+      <p style="font-size:0.88rem;font-weight:300;line-height:1.7;">The threshold is the cut-off probability used to convert the model's output into a class label. The default is <strong>0.5</strong>:</p>
+      <div class="threshold-bar">
+        <div class="threshold-line"></div>
+      </div>
+      <div class="threshold-labels">
+        <span class="threshold-label">← Predict 0 (Negative)</span>
+        <span class="threshold-label">Predict 1 (Positive) →</span>
+      </div>
+    </div>
+    <div class="content-block">
+      <ul>
+        <li><strong>P ≥ 0.5</strong> → the model predicts class <strong>1</strong> (positive).</li>
+        <li><strong>P &lt; 0.5</strong> → the model predicts class <strong>0</strong> (negative).</li>
+        <li>The threshold can be adjusted based on context — lowering it increases sensitivity.</li>
+      </ul>
+    </div>
+
+    <!-- 09 Real-World Example -->
+    <p class="section-label">09 &mdash; Real-World Example</p>
+    <div class="content-block">
+      <p>A common application of logistic regression is <strong>email spam detection</strong>. Given features extracted from an email, the model estimates the probability that it is spam:</p>
+      <p class="code-line">z = −4.2 + 1.8×ContainsPromo + 0.9×LinksCount − 1.1×KnownSender</p>
+      <p>For a given email, suppose <strong>z = 2.1</strong>:</p>
+      <p class="code-line">P(Spam) = 1 / (1 + e<sup>−2.1</sup>) ≈ <strong>0.891</strong> → Class <strong>1</strong></p>
+    </div>
+    <div class="example-row">
+      <div class="example-cell">
+        <p class="example-key">Linear score (z)</p>
+        <p class="example-val">2.1</p>
+      </div>
+      <div class="example-cell">
+        <p class="example-key">Probability</p>
+        <p class="example-val">0.891 (89.1%)</p>
+      </div>
+      <div class="example-cell">
+        <p class="example-key">Predicted class</p>
+        <p class="example-val positive">1 — Spam</p>
+      </div>
+    </div>
+    <div class="content-block">
+      <ul>
+        <li><strong>Features (X):</strong> presence of promotional words, number of links, whether the sender is known, email length, and more.</li>
+        <li><strong>Target (Y):</strong> 1 = Spam, 0 = Not Spam.</li>
+        <li>Since P = 0.891 ≥ 0.5, the email is classified as <strong>Spam</strong> and sent to the junk folder.</li>
+      </ul>
+    </div>
+
+  </main>
+
+  <footer>
+    <p class="footer-label">Group Members</p>
+    <div class="members">
+      <span class="member">Elkin Yamith Almonacid López</span>
+      <span class="member">Brayan David Cuitiva Umbarila</span>
+      <span class="member">Brayan Yair Mendez Rodriguez</span>
+    </div>
+    <p class="university">Universidad de Cundinamarca</p>
+  </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
