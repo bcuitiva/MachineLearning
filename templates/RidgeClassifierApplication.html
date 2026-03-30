@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ridge Classifier — Application</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:      #f5f4f0;
+      --surface: #ffffff;
+      --border:  #d9d7d0;
+      --text:    #111110;
+      --muted:   #7a7870;
+      --radius:  4px;
+      --mono:    'IBM Plex Mono', monospace;
+      --sans:    'IBM Plex Sans', sans-serif;
+      --tr:      0.22s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; flex-direction: column; }
+    .page { flex: 1; display: flex; flex-direction: column; max-width: 720px; margin: 0 auto; width: 100%; padding: 5rem 1.5rem 3rem; }
+
+    .back-link { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 3rem; transition: color var(--tr); }
+    .back-link:hover { color: var(--text); }
+
+    header { margin-bottom: 4rem; }
+    .eyebrow { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.1rem; }
+    h1 { font-family: var(--mono); font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; color: var(--text); margin-bottom: 0.6rem; }
+    .subtitle { font-family: var(--sans); font-size: 1rem; font-weight: 300; color: var(--muted); }
+    .rule { width: 32px; height: 1px; background: var(--text); margin: 1.6rem 0 0; }
+
+    .section-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; margin-top: 2.5rem; }
+
+    /* Content block */
+    .content-block { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.4rem 1.6rem; margin-bottom: 0.5rem; }
+    .block-title { font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); margin-bottom: 0.7rem; }
+    .content-block p { font-size: 0.9rem; font-weight: 300; color: var(--text); line-height: 1.75; margin-bottom: 0.5rem; }
+    .content-block p:last-child { margin-bottom: 0; }
+    .content-block ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .content-block ul li { font-size: 0.88rem; font-weight: 300; color: var(--text); padding-left: 1.4rem; position: relative; line-height: 1.6; }
+    .content-block ul li::before { content: '—'; position: absolute; left: 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; }
+    .content-block ul li strong { font-weight: 500; }
+
+    /* Stats grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; }
+    .stat-item { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 0.9rem 1rem; }
+    .stat-key { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
+    .stat-val { font-family: var(--mono); font-size: 1rem; font-weight: 600; color: var(--text); }
+    .stat-sub { font-size: 0.7rem; font-weight: 300; color: var(--muted); margin-top: 0.15rem; }
+
+    /* Variable table */
+    .var-table { width: 100%; border-collapse: collapse; }
+    .var-table thead tr { border-bottom: 1px solid var(--border); }
+    .var-table th { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); padding: 0.5rem 0.7rem; text-align: left; font-weight: 400; }
+    .var-table td { font-size: 0.83rem; font-weight: 300; color: var(--text); padding: 0.65rem 0.7rem; border-bottom: 1px solid var(--border); line-height: 1.4; }
+    .var-table tr:last-child td { border-bottom: none; }
+    .var-table td:first-child { font-family: var(--mono); font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+    .badge { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--border); border-radius: 2px; padding: 0.12rem 0.4rem; color: var(--muted); }
+
+    /* Prep steps */
+    .steps { display: flex; flex-direction: column; }
+    .step { display: flex; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid var(--border); }
+    .step:last-child { border-bottom: none; padding-bottom: 0; }
+    .step:first-child { padding-top: 0; }
+    .step-num { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); flex-shrink: 0; min-width: 1.4rem; padding-top: 0.1rem; }
+    .step-body { display: flex; flex-direction: column; gap: 0.2rem; }
+    .step-title { font-size: 0.88rem; font-weight: 500; color: var(--text); }
+    .step-desc { font-size: 0.78rem; font-weight: 300; color: var(--muted); line-height: 1.5; }
+
+    /* Metrics grid — 2 columns like Logistic Regression */
+    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; }
+    .metric-item { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1rem 1.2rem; }
+    .metric-key { font-family: var(--mono); font-size: 0.56rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+    .metric-val { font-family: var(--mono); font-size: 1.4rem; font-weight: 600; color: var(--text); line-height: 1; }
+    .metric-desc { font-size: 0.75rem; font-weight: 300; color: var(--muted); margin-top: 0.25rem; line-height: 1.4; }
+
+    /* Chart */
+    .chart-wrap { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.4rem 1.6rem; margin-bottom: 0.5rem; }
+    .chart-meta { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .chart-container { position: relative; height: 300px; }
+
+    /* Confusion matrix */
+    .cm-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; max-width: 320px; margin: 1rem auto 0; }
+    .cm-cell { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
+    .cm-cell.tp, .cm-cell.tn { background: var(--text); }
+    .cm-cell.tp .cm-num, .cm-cell.tn .cm-num { color: var(--bg); }
+    .cm-cell.fp, .cm-cell.fn { background: var(--surface); }
+    .cm-num { font-family: var(--mono); font-size: 2rem; font-weight: 600; line-height: 1; }
+    .cm-label { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0.3rem; color: var(--muted); }
+    .cm-cell.tp .cm-label, .cm-cell.tn .cm-label { color: rgba(245,244,240,0.5); }
+    .cm-axis { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); text-align: center; margin-top: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+    /* Form */
+    .form-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.6rem; margin-bottom: 0.5rem; }
+    .group-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border); }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.1rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { font-size: 0.8rem; font-weight: 500; color: var(--text); }
+    .field .hint { font-size: 0.72rem; font-weight: 300; color: var(--muted); }
+    .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    input[type="number"] { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.65rem 0.85rem; font-family: var(--sans); font-size: 0.88rem; color: var(--text); outline: none; transition: border-color var(--tr); }
+    input[type="number"]:focus { border-color: var(--text); }
+    .btn-predict { width: 100%; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius); padding: 0.95rem; font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; margin-top: 1.5rem; transition: opacity var(--tr); }
+    .btn-predict:hover { opacity: 0.8; }
+
+    /* Result */
+    .result-block { border-radius: var(--radius); padding: 2rem 1.6rem; margin-bottom: 0.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; animation: fadeUp 0.5s ease both; }
+    .result-block.graduate { border: 1px solid var(--text); background: var(--text); }
+    .result-block.dropout  { border: 1px solid #c0392b; background: #c0392b; }
+    .result-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,244,240,0.5); }
+    .result-value { font-family: var(--mono); font-size: clamp(2.2rem, 8vw, 4rem); font-weight: 600; color: #f5f4f0; line-height: 1; letter-spacing: -0.03em; }
+    .result-sub { font-family: var(--sans); font-size: 0.82rem; font-weight: 300; color: rgba(245,244,240,0.55); margin-top: 0.2rem; }
+
+    /* Footer */
+    footer { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 2rem; }
+    .footer-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .members { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.4rem; }
+    .member { font-size: 0.88rem; font-weight: 400; color: var(--text); }
+    .university { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.08em; color: var(--muted); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 520px) {
+      .page { padding: 3rem 1.2rem 2rem; }
+      .stats-grid    { grid-template-columns: 1fr 1fr; }
+      .metrics-grid  { grid-template-columns: 1fr; }
+      .fields-row    { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <a href="{{ url_for('RCMenu') }}" class="back-link">&#8592; Ridge Classifier</a>
+
+  <header>
+    <p class="eyebrow">Assigned Model &middot; Practice</p>
+    <h1>Student Dropout Prediction</h1>
+    <p class="subtitle">Ridge Classifier applied to predict academic outcomes in higher education</p>
+    <div class="rule"></div>
+  </header>
+
+  <main>
+
+    <!-- 01 Problem description -->
+    <p class="section-label">01 &mdash; Problem Description</p>
+    <div class="content-block">
+      <p>Student dropout is one of the most significant challenges in higher education institutions. Early identification of students at risk of dropping out allows universities to intervene proactively — offering academic support, counseling, or financial aid before the student abandons their studies.</p>
+      <p>This model uses a <strong>Ridge Classifier</strong> trained on academic performance and enrollment data to predict whether a student will <strong>Graduate / Stay Enrolled</strong> or <strong>Drop Out</strong>, based on their first and second semester results.</p>
+    </div>
+
+    <!-- 02 Dataset -->
+    <p class="section-label">02 &mdash; Dataset</p>
+    <div class="content-block">
+      <p class="block-title">Predict Students' Dropout and Academic Success</p>
+      <p>The dataset contains records from students enrolled in undergraduate programs at a Portuguese higher education institution. It includes demographic, socioeconomic, and academic performance data collected at enrollment and at the end of the first two semesters.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <p class="stat-key">Total records</p>
+        <p class="stat-val">4,424</p>
+        <p class="stat-sub">Students</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Original classes</p>
+        <p class="stat-val">3</p>
+        <p class="stat-sub">Dropout · Enrolled · Graduate</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Model classes</p>
+        <p class="stat-val">2</p>
+        <p class="stat-sub">Dropout · Graduate/Enrolled</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Dropout records</p>
+        <p class="stat-val">1,421</p>
+        <p class="stat-sub">32.1% of dataset</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Graduate / Enrolled</p>
+        <p class="stat-val">3,003</p>
+        <p class="stat-sub">67.9% of dataset</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Features used</p>
+        <p class="stat-val">5</p>
+        <p class="stat-sub">Selected input variables</p>
+      </div>
+    </div>
+
+    <!-- 03 Variables -->
+    <p class="section-label">03 &mdash; Variables Used</p>
+    <div class="content-block">
+      <table class="var-table">
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Age at enrollment</td><td><span class="badge">Numeric</span></td><td>Student's age when they enrolled in the program</td></tr>
+          <tr><td>Units 1st sem (approved)</td><td><span class="badge">Numeric</span></td><td>Number of curricular units passed in the 1st semester</td></tr>
+          <tr><td>Units 2nd sem (approved)</td><td><span class="badge">Numeric</span></td><td>Number of curricular units passed in the 2nd semester</td></tr>
+          <tr><td>Units 1st sem (grade)</td><td><span class="badge">Numeric</span></td><td>Average grade in the 1st semester (0 – 20 scale)</td></tr>
+          <tr><td>Units 2nd sem (grade)</td><td><span class="badge">Numeric</span></td><td>Average grade in the 2nd semester (0 – 20 scale)</td></tr>
+          <tr><td>Target</td><td><span class="badge">Binary</span></td><td>0 = Dropout &nbsp;·&nbsp; 1 = Graduate or Enrolled</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 04 Data preparation -->
+    <p class="section-label">04 &mdash; Data Preparation</p>
+    <div class="content-block">
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01</span>
+          <div class="step-body">
+            <span class="step-title">Target encoding</span>
+            <span class="step-desc">The original three-class target (Dropout, Enrolled, Graduate) was converted to binary: <strong>Dropout → 0</strong>, Graduate and Enrolled → <strong>1</strong>. This focuses the model on the most critical distinction.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <div class="step-body">
+            <span class="step-title">Feature selection</span>
+            <span class="step-desc">5 variables were selected from the original 34 features — those most directly related to academic performance and at-risk detection during the first year of study.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <div class="step-body">
+            <span class="step-title">StandardScaler normalization</span>
+            <span class="step-desc">All input features were standardized to zero mean and unit variance using <strong>StandardScaler</strong>. This is required for Ridge Classifier since it is sensitive to feature scale.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">04</span>
+          <div class="step-body">
+            <span class="step-title">Train / Test split</span>
+            <span class="step-desc">Data was split into <strong>80% training (3,539 records)</strong> and <strong>20% test (885 records)</strong> with <code>random_state=42</code> for reproducibility.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">05</span>
+          <div class="step-body">
+            <span class="step-title">Model training</span>
+            <span class="step-desc"><strong>RidgeClassifier(alpha=1.0)</strong> was fitted on the scaled training set. Alpha=1.0 provides balanced regularization, preventing overfitting without over-constraining the model.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 Metrics -->
+    <p class="section-label">05 &mdash; Model Performance</p>
+    <div class="metrics-grid">
+      <div class="metric-item">
+        <p class="metric-key">Accuracy</p>
+        <p class="metric-val">79.5%</p>
+        <p class="metric-desc">Overall share of correct predictions across both classes on the test set.</p>
+      </div>
+      <div class="metric-item">
+        <p class="metric-key">AUC — ROC</p>
+        <p class="metric-val">{{ auc }}</p>
+        <p class="metric-desc">Area under the ROC curve — measures the model's ability to distinguish dropouts from graduates across all thresholds.</p>
+      </div>
+      <div class="metric-item">
+        <p class="metric-key">Precision</p>
+        <p class="metric-val">78.6%</p>
+        <p class="metric-desc">When the model predicts a student will graduate, it is correct 78.6% of the time.</p>
+      </div>
+      <div class="metric-item">
+        <p class="metric-key">Recall</p>
+        <p class="metric-val">93.7%</p>
+        <p class="metric-desc">The model correctly identifies 93.7% of all students who actually graduate or remain enrolled.</p>
+      </div>
+      <div class="metric-item">
+        <p class="metric-key">F1-Score</p>
+        <p class="metric-val">85.5%</p>
+        <p class="metric-desc">Harmonic mean of precision and recall — balances both metrics into a single performance score.</p>
+      </div>
+      <div class="metric-item">
+        <p class="metric-key">Test set</p>
+        <p class="metric-val">885 records</p>
+        <p class="metric-desc">20% of the dataset held out for unbiased evaluation (never seen during training).</p>
+      </div>
+    </div>
+
+    <!-- 06 Confusion Matrix -->
+    <p class="section-label">06 &mdash; Confusion Matrix</p>
+    <div class="chart-wrap">
+      <p class="chart-meta">Test set &nbsp;·&nbsp; 885 records &nbsp;·&nbsp; Predicted vs Actual</p>
+      <div class="cm-visual">
+        <div class="cm-cell tn">
+          <p class="cm-num">171</p>
+          <p class="cm-label">True Negative</p>
+        </div>
+        <div class="cm-cell fp">
+          <p class="cm-num">145</p>
+          <p class="cm-label">False Positive</p>
+        </div>
+        <div class="cm-cell fn">
+          <p class="cm-num">36</p>
+          <p class="cm-label">False Negative</p>
+        </div>
+        <div class="cm-cell tp">
+          <p class="cm-num">533</p>
+          <p class="cm-label">True Positive</p>
+        </div>
+      </div>
+      <p class="cm-axis" style="margin-top:0.8rem;">Columns: Predicted &nbsp;·&nbsp; Rows: Actual</p>
+    </div>
+    <div class="content-block">
+      <ul>
+        <li><strong>True Negative (171):</strong> correctly predicted as dropout.</li>
+        <li><strong>True Positive (533):</strong> correctly predicted to graduate or remain enrolled.</li>
+        <li><strong>False Positive (145):</strong> predicted graduate, but actually dropped out — may be missed by support programs.</li>
+        <li><strong>False Negative (36):</strong> predicted dropout, but actually graduated — leads to unnecessary but harmless interventions.</li>
+      </ul>
+    </div>
+
+    <!-- 07 ROC Curve -->
+    <p class="section-label">07 &mdash; ROC Curve</p>
+    <div class="chart-wrap">
+      <p class="chart-meta">ROC Curve &nbsp;·&nbsp; AUC = {{ auc }} &nbsp;·&nbsp; Test set &nbsp;·&nbsp; Real dataset points</p>
+      <div class="chart-container">
+        <canvas id="rocChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 08 Interpretation -->
+    <p class="section-label">08 &mdash; Interpretation of Results</p>
+    <div class="content-block">
+      <p class="block-title">What the metrics tell us</p>
+      <p>The model achieves an <strong>accuracy of 79.5%</strong> — correctly classifying about 4 out of 5 students. The <strong>recall of 93.7%</strong> is particularly important in this context: it means the model correctly identifies the vast majority of students who will graduate or stay enrolled, minimizing the risk of failing to support them.</p>
+      <p>The <strong>AUC of {{ auc }}</strong> indicates strong discriminative ability — the model is significantly better than random at separating dropouts from graduates across all classification thresholds.</p>
+    </div>
+    <div class="content-block">
+      <p class="block-title">Reading the confusion matrix</p>
+      <ul>
+        <li><strong>533 True Positives:</strong> students correctly predicted to graduate — the model's strongest area.</li>
+        <li><strong>171 True Negatives:</strong> dropouts correctly identified — useful for early intervention.</li>
+        <li><strong>145 False Positives:</strong> dropouts incorrectly predicted as graduates — these students may be missed by support programs.</li>
+        <li><strong>36 False Negatives:</strong> graduates incorrectly flagged as at-risk — low impact, leads to unnecessary but harmless interventions.</li>
+      </ul>
+    </div>
+    <div class="content-block">
+      <p class="block-title">Limitations</p>
+      <ul>
+        <li>Only 5 variables are used — adding socioeconomic and demographic features could improve accuracy.</li>
+        <li>The model is linear and may miss non-linear patterns in student behavior.</li>
+        <li>The class imbalance (68% graduate vs 32% dropout) may bias predictions toward the majority class.</li>
+      </ul>
+    </div>
+
+    <!-- 09 Result -->
+    {% if prediction_text %}
+    <p class="section-label">Prediction Result</p>
+    {% if prediction_text == 'Graduate / Enrolled' %}
+    <div class="result-block graduate">
+      <span class="result-label">Predicted Academic Outcome</span>
+      <span class="result-value">Graduate</span>
+      <span class="result-sub">The student is likely to complete or remain enrolled in the program.</span>
+    </div>
+    {% else %}
+    <div class="result-block dropout">
+      <span class="result-label">Predicted Academic Outcome</span>
+      <span class="result-value">Dropout</span>
+      <span class="result-sub">The student shows indicators associated with academic dropout risk.</span>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- 10 Prediction Form -->
+    <p class="section-label">09 &mdash; Prediction Form</p>
+    <form action="/RidgeClassifier" method="post">
+      <div class="form-card">
+        <p class="group-label">Student Academic Data</p>
+        <div class="fields-row">
+          <div class="field">
+            <label for="age">Age at enrollment</label>
+            <span class="hint">Years (17 – 70)</span>
+            <input type="number" step="any" id="age" name="age" min="17" max="70" required />
+          </div>
+          <div class="field">
+            <label for="sem1_ap">Units approved — 1st semester</label>
+            <span class="hint">Number of units passed (0 – 26)</span>
+            <input type="number" step="any" id="sem1_ap" name="sem1_ap" min="0" max="26" required />
+          </div>
+        </div>
+        <div class="fields-row">
+          <div class="field">
+            <label for="sem2_ap">Units approved — 2nd semester</label>
+            <span class="hint">Number of units passed (0 – 20)</span>
+            <input type="number" step="any" id="sem2_ap" name="sem2_ap" min="0" max="20" required />
+          </div>
+          <div class="field">
+            <label for="sem1_grade">Average grade — 1st semester</label>
+            <span class="hint">Score from 0 to 20</span>
+            <input type="number" step="any" id="sem1_grade" name="sem1_grade" min="0" max="20" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="sem2_grade">Average grade — 2nd semester</label>
+          <span class="hint">Score from 0 to 20</span>
+          <input type="number" step="any" id="sem2_grade" name="sem2_grade" min="0" max="20" required />
+        </div>
+      </div>
+      <button type="submit" class="btn-predict">Run Prediction</button>
+    </form>
+
+  </main>
+
+  <footer>
+    <p class="footer-label">Group Members</p>
+    <div class="members">
+      <span class="member">Elkin Yamith Almonacid López</span>
+      <span class="member">Brayan David Cuitiva Umbarila</span>
+      <span class="member">Brayan Yair Mendez Rodriguez</span>
+    </div>
+    <p class="university">Universidad de Cundinamarca</p>
+  </footer>
+
+</div>
+
+<script>
+  // ROC data injected from Flask — real test-set points from the dataset
+  const rocData = JSON.parse('{{ roc_points | safe }}');
+  const auc = parseFloat("{{ auc }}");
+
+  const ctx = document.getElementById('rocChart').getContext('2d');
+
+  new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Ridge Classifier (AUC = ' + auc + ')',
+          data: rocData,
+          borderColor: '#111110',
+          backgroundColor: 'rgba(17,17,16,0.6)',
+          borderWidth: 2,
+          pointRadius: 2.5,
+          pointHoverRadius: 5,
+          showLine: true,
+          tension: 0,
+          fill: false,
+          order: 1,
+        },
+        {
+          label: 'Random classifier',
+          data: [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+          borderColor: '#d9d7d0',
+          backgroundColor: '#d9d7d0',
+          borderWidth: 1.5,
+          borderDash: [5, 5],
+          pointRadius: 0,
+          showLine: true,
+          fill: false,
+          order: 2,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { family: "'IBM Plex Mono'", size: 10 },
+            color: '#7a7870',
+            boxWidth: 12,
+            padding: 16,
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              if (ctx.datasetIndex === 0)
+                return ' FPR: ' + ctx.parsed.x.toFixed(3) + '  |  TPR: ' + ctx.parsed.y.toFixed(3);
+              return null;
+            }
+          },
+          titleFont: { family: "'IBM Plex Mono'", size: 11 },
+          bodyFont:  { family: "'IBM Plex Sans'", size: 11 },
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          min: 0,
+          max: 1,
+          title: {
+            display: true,
+            text: 'False Positive Rate',
+            font: { family: "'IBM Plex Mono'", size: 10 },
+            color: '#7a7870',
+          },
+          ticks: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          grid:  { color: '#e8e6e0' },
+        },
+        y: {
+          type: 'linear',
+          min: 0,
+          max: 1,
+          title: {
+            display: true,
+            text: 'True Positive Rate',
+            font: { family: "'IBM Plex Mono'", size: 10 },
+            color: '#7a7870',
+          },
+          ticks: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          grid:  { color: '#e8e6e0' },
+        }
+      }
+    }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
