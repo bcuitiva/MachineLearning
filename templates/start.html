@@ -8,184 +8,50 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg:       #f5f4f0;
-      --surface:  #ffffff;
-      --border:   #d9d7d0;
-      --text:     #111110;
-      --muted:    #7a7870;
-      --radius:   4px;
-      --mono:     'IBM Plex Mono', monospace;
-      --sans:     'IBM Plex Sans', sans-serif;
-      --tr:       0.22s ease;
+      --bg:      #f5f4f0;
+      --surface: #ffffff;
+      --border:  #d9d7d0;
+      --text:    #111110;
+      --muted:   #7a7870;
+      --radius:  4px;
+      --mono:    'IBM Plex Mono', monospace;
+      --sans:    'IBM Plex Sans', sans-serif;
+      --tr:      0.22s ease;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; flex-direction: column; }
+    .page { flex: 1; display: flex; flex-direction: column; max-width: 720px; margin: 0 auto; width: 100%; padding: 5rem 1.5rem 3rem; }
 
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .page {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      max-width: 720px;
-      margin: 0 auto;
-      width: 100%;
-      padding: 5rem 1.5rem 3rem;
-    }
-
-    /* ── Header ── */
     header { margin-bottom: 4rem; }
+    .eyebrow { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.1rem; }
+    h1 { font-family: var(--mono); font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--text); margin-bottom: 0.6rem; }
+    h2 { font-family: var(--sans); font-size: 1rem; font-weight: 300; color: var(--muted); letter-spacing: 0.01em; }
+    .rule { width: 32px; height: 1px; background: var(--text); margin: 1.6rem 0 0; }
 
-    .eyebrow {
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1.1rem;
-    }
+    .section-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
 
-    h1 {
-      font-family: var(--mono);
-      font-size: clamp(2rem, 5vw, 3.2rem);
-      font-weight: 600;
-      letter-spacing: -0.03em;
-      line-height: 1;
-      color: var(--text);
-      margin-bottom: 0.6rem;
-    }
+    .menu-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 5rem; }
 
-    h2 {
-      font-family: var(--sans);
-      font-size: 1rem;
-      font-weight: 300;
-      color: var(--muted);
-      letter-spacing: 0.01em;
-    }
-
-    .rule {
-      width: 32px;
-      height: 1px;
-      background: var(--text);
-      margin: 1.6rem 0 0;
-    }
-
-    /* ── Menu ── */
-    .section-label {
-      font-family: var(--mono);
-      font-size: 0.6rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1rem;
-    }
-
-    .menu-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 5rem;
-    }
-
-    .menu-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.4rem 1.6rem;
-      text-decoration: none;
-      color: var(--text);
-      transition: border-color var(--tr), background var(--tr), color var(--tr);
-    }
-
-    .menu-item:hover {
-      border-color: var(--text);
-      background: var(--text);
-      color: var(--bg);
-    }
+    .menu-item { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem 1.6rem; text-decoration: none; color: var(--text); transition: border-color var(--tr), background var(--tr), color var(--tr); }
+    .menu-item:hover { border-color: var(--text); background: var(--text); color: var(--bg); }
 
     .item-left { display: flex; flex-direction: column; gap: 0.3rem; }
-
-    .item-index {
-      font-family: var(--mono);
-      font-size: 0.58rem;
-      letter-spacing: 0.15em;
-      color: var(--muted);
-      transition: color var(--tr);
-    }
-
+    .item-index { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.15em; color: var(--muted); transition: color var(--tr); }
     .menu-item:hover .item-index { color: rgba(245,244,240,0.45); }
+    .item-label { font-size: 1rem; font-weight: 500; letter-spacing: -0.01em; }
+    .item-arrow { font-family: var(--mono); font-size: 0.9rem; color: var(--muted); transition: color var(--tr), transform var(--tr); }
+    .menu-item:hover .item-arrow { color: var(--bg); transform: translateX(4px); }
 
-    .item-label {
-      font-size: 1rem;
-      font-weight: 500;
-      letter-spacing: -0.01em;
-    }
+    footer { margin-top: auto; border-top: 1px solid var(--border); padding-top: 2rem; }
+    .footer-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .members { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.4rem; }
+    .member { font-size: 0.88rem; font-weight: 400; color: var(--text); }
+    .university { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.08em; color: var(--muted); }
 
-    .item-arrow {
-      font-family: var(--mono);
-      font-size: 0.9rem;
-      color: var(--muted);
-      transition: color var(--tr), transform var(--tr);
-    }
-
-    .menu-item:hover .item-arrow {
-      color: var(--bg);
-      transform: translateX(4px);
-    }
-
-    /* ── Footer ── */
-    footer {
-      margin-top: auto;
-      border-top: 1px solid var(--border);
-      padding-top: 2rem;
-    }
-
-    .footer-label {
-      font-family: var(--mono);
-      font-size: 0.58rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 1rem;
-    }
-
-    .members {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-      margin-bottom: 1.4rem;
-    }
-
-    .member {
-      font-size: 0.88rem;
-      font-weight: 400;
-      color: var(--text);
-    }
-
-    .university {
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-    }
-
-    @media (max-width: 480px) {
-      .page { padding: 3rem 1.2rem 2rem; }
-    }
+    @media (max-width: 480px) { .page { padding: 3rem 1.2rem 2rem; } }
   </style>
 </head>
 <body>
-
 <div class="page">
 
   <header>
@@ -207,10 +73,10 @@
         <span class="item-arrow">&#8594;</span>
       </a>
 
-      <a href="{{ url_for('linearRM') }}" class="menu-item">
+      <a href="{{ url_for('supervisedML') }}" class="menu-item">
         <div class="item-left">
           <span class="item-index">02</span>
-          <span class="item-label">Linear Regression</span>
+          <span class="item-label">Supervised Machine Learning</span>
         </div>
         <span class="item-arrow">&#8594;</span>
       </a>
@@ -229,7 +95,6 @@
   </footer>
 
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
