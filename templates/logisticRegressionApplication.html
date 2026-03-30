@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diabetes Prediction — Logistic Regression</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:      #f5f4f0;
+      --surface: #ffffff;
+      --border:  #d9d7d0;
+      --text:    #111110;
+      --muted:   #7a7870;
+      --radius:  4px;
+      --mono:    'IBM Plex Mono', monospace;
+      --sans:    'IBM Plex Sans', sans-serif;
+      --tr:      0.22s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background-color: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; display: flex; flex-direction: column; }
+    .page { flex: 1; display: flex; flex-direction: column; max-width: 720px; margin: 0 auto; width: 100%; padding: 5rem 1.5rem 3rem; }
+
+    .back-link { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; margin-bottom: 3rem; transition: color var(--tr); }
+    .back-link:hover { color: var(--text); }
+
+    header { margin-bottom: 4rem; }
+    .eyebrow { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.1rem; }
+    h1 { font-family: var(--mono); font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 600; letter-spacing: -0.03em; line-height: 1.05; color: var(--text); margin-bottom: 0.6rem; }
+    .subtitle { font-family: var(--sans); font-size: 1rem; font-weight: 300; color: var(--muted); }
+    .rule { width: 32px; height: 1px; background: var(--text); margin: 1.6rem 0 0; }
+
+    .section-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; margin-top: 2.5rem; }
+
+    /* Content block */
+    .content-block { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.4rem 1.6rem; margin-bottom: 0.5rem; }
+    .block-title { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); margin-bottom: 0.75rem; }
+    .content-block p { font-size: 0.9rem; font-weight: 300; color: var(--text); line-height: 1.7; margin-bottom: 0.5rem; }
+    .content-block p:last-child { margin-bottom: 0; }
+    .content-block ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .content-block ul li { font-size: 0.88rem; font-weight: 300; color: var(--text); padding-left: 1.4rem; position: relative; line-height: 1.5; }
+    .content-block ul li::before { content: '—'; position: absolute; left: 0; color: var(--muted); font-family: var(--mono); font-size: 0.75rem; }
+    .content-block ul li strong { font-weight: 500; }
+
+    /* Stats grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; }
+    .stat-item { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 0.9rem 1rem; }
+    .stat-key { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
+    .stat-val { font-family: var(--mono); font-size: 1rem; font-weight: 600; color: var(--text); }
+    .stat-sub { font-size: 0.7rem; font-weight: 300; color: var(--muted); margin-top: 0.15rem; }
+
+    /* Variable table */
+    .var-table { width: 100%; border-collapse: collapse; }
+    .var-table thead tr { border-bottom: 1px solid var(--border); }
+    .var-table th { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); padding: 0.5rem 0.6rem; text-align: left; font-weight: 400; }
+    .var-table td { font-size: 0.82rem; font-weight: 300; color: var(--text); padding: 0.65rem 0.6rem; border-bottom: 1px solid var(--border); line-height: 1.4; }
+    .var-table tr:last-child td { border-bottom: none; }
+    .var-table td:first-child { font-family: var(--mono); font-size: 0.75rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+    .badge { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--border); border-radius: 2px; padding: 0.12rem 0.4rem; color: var(--muted); white-space: nowrap; }
+    .badge-target { border-color: var(--text); color: var(--text); }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; }
+    .step { display: flex; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid var(--border); }
+    .step:last-child { border-bottom: none; padding-bottom: 0; }
+    .step:first-child { padding-top: 0; }
+    .step-num { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); flex-shrink: 0; min-width: 1.4rem; padding-top: 0.1rem; }
+    .step-body { display: flex; flex-direction: column; gap: 0.2rem; }
+    .step-title { font-size: 0.88rem; font-weight: 500; color: var(--text); }
+    .step-desc { font-size: 0.78rem; font-weight: 300; color: var(--muted); line-height: 1.5; }
+
+    /* Metrics grid */
+    .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.5rem; }
+    .metric-item { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1rem 1.2rem; }
+    .metric-key { font-family: var(--mono); font-size: 0.56rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.35rem; }
+    .metric-val { font-family: var(--mono); font-size: 1.4rem; font-weight: 600; color: var(--text); line-height: 1; }
+    .metric-desc { font-size: 0.75rem; font-weight: 300; color: var(--muted); margin-top: 0.25rem; line-height: 1.4; }
+
+    /* Per-class metrics table */
+    .class-table { width: 100%; border-collapse: collapse; }
+    .class-table thead tr { border-bottom: 1px solid var(--border); }
+    .class-table th { font-family: var(--mono); font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); padding: 0.45rem 0.7rem; text-align: right; font-weight: 400; }
+    .class-table th:first-child { text-align: left; }
+    .class-table td { font-size: 0.84rem; font-weight: 300; color: var(--text); padding: 0.6rem 0.7rem; border-bottom: 1px solid var(--border); text-align: right; }
+    .class-table tr:last-child td { border-bottom: none; }
+    .class-table td:first-child { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; text-align: left; }
+
+    /* Chart */
+    .chart-wrap { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.4rem 1.6rem; margin-bottom: 0.5rem; }
+    .chart-meta { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .chart-container { position: relative; height: 280px; }
+    .chart-container-sm { position: relative; height: 240px; }
+
+    /* CM grid */
+    .cm-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; max-width: 320px; margin: 1rem auto 0; }
+    .cm-cell { border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
+    .cm-cell.tp, .cm-cell.tn { background: var(--text); }
+    .cm-cell.tp .cm-num, .cm-cell.tn .cm-num { color: var(--bg); }
+    .cm-cell.fp, .cm-cell.fn { background: var(--surface); }
+    .cm-num { font-family: var(--mono); font-size: 2rem; font-weight: 600; line-height: 1; }
+    .cm-label { font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0.3rem; color: var(--muted); }
+    .cm-cell.tp .cm-label, .cm-cell.tn .cm-label { color: rgba(245,244,240,0.5); }
+    .cm-axis { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); text-align: center; margin-top: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+    /* Form */
+    .form-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 1.6rem; margin-bottom: 0.5rem; }
+    .group-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border); }
+    .field { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.1rem; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { font-size: 0.8rem; font-weight: 500; color: var(--text); }
+    .field .hint { font-size: 0.72rem; font-weight: 300; color: var(--muted); }
+    input[type="number"], select { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.65rem 0.85rem; font-family: var(--sans); font-size: 0.88rem; color: var(--text); outline: none; transition: border-color var(--tr); appearance: none; -webkit-appearance: none; }
+    input[type="number"]:focus, select:focus { border-color: var(--text); }
+    .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .btn-predict { width: 100%; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius); padding: 0.95rem; font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; margin-top: 1.5rem; transition: opacity var(--tr); }
+    .btn-predict:hover { opacity: 0.8; }
+
+    /* Result */
+    .result-block { border: 1px solid var(--text); border-radius: var(--radius); background: var(--text); padding: 2rem 1.6rem; margin-bottom: 0.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; animation: fadeUp 0.5s ease both; }
+    .result-label { font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,244,240,0.5); }
+    .result-class { font-family: var(--mono); font-size: clamp(1.6rem, 6vw, 2.6rem); font-weight: 600; color: #f5f4f0; line-height: 1.1; letter-spacing: -0.02em; text-align: center; }
+    .result-prob { font-family: var(--mono); font-size: 1rem; color: rgba(245,244,240,0.6); letter-spacing: 0.08em; }
+    .result-note { font-family: var(--sans); font-size: 0.78rem; font-weight: 300; color: rgba(245,244,240,0.4); margin-top: 0.25rem; text-align: center; }
+
+    footer { margin-top: 4rem; border-top: 1px solid var(--border); padding-top: 2rem; }
+    .footer-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 1rem; }
+    .members { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.4rem; }
+    .member { font-size: 0.88rem; font-weight: 400; color: var(--text); }
+    .university { font-family: var(--mono); font-size: 0.65rem; letter-spacing: 0.08em; color: var(--muted); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 520px) {
+      .page { padding: 3rem 1.2rem 2rem; }
+      .fields-row { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .metrics-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <a href="{{ url_for('logisticRM') }}" class="back-link">&#8592; Logistic Regression</a>
+
+  <header>
+    <p class="eyebrow">Module 03 &middot; Logistic Regression</p>
+    <h1>Diabetes Prediction</h1>
+    <p class="subtitle">Classifying diabetes risk from clinical measurements using Logistic Regression</p>
+    <div class="rule"></div>
+  </header>
+
+  <main>
+
+    <!-- 01 Problem Description -->
+    <p class="section-label">01 &mdash; Problem Description</p>
+    <div class="content-block">
+      <p class="block-title">What problem does this model solve?</p>
+      <p>Diabetes is one of the most prevalent chronic diseases worldwide, affecting hundreds of millions of people. Early detection is critical — it enables timely intervention, lifestyle changes, and medical treatment that can prevent or significantly delay serious complications such as kidney failure, blindness, and cardiovascular disease.</p>
+      <p>This model applies <strong>Logistic Regression</strong> to predict whether a patient is likely to have diabetes, based on 8 clinical measurements. The output is a <strong>binary classification</strong>: 1 (diabetic) or 0 (not diabetic), derived from the estimated probability returned by the sigmoid function.</p>
+    </div>
+    <div class="content-block">
+      <p class="block-title">Why Logistic Regression?</p>
+      <p>Logistic Regression is well-suited for binary medical classification tasks. It is interpretable — clinicians can understand how each variable contributes to the risk score. It outputs calibrated probabilities, which are more informative than a simple yes/no label, and it performs robustly even on moderately sized datasets like this one.</p>
+    </div>
+
+    <!-- 02 Dataset -->
+    <p class="section-label">02 &mdash; Dataset</p>
+    <div class="content-block">
+      <p class="block-title">Pima Indians Diabetes Dataset</p>
+      <p>This dataset originates from the National Institute of Diabetes and Digestive and Kidney Diseases. It contains diagnostic measurements from female patients of Pima Indian heritage, aged 21 and older. All patients were tested for diabetes according to WHO criteria.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <p class="stat-key">Total records</p>
+        <p class="stat-val">768</p>
+        <p class="stat-sub">Female patients</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Features</p>
+        <p class="stat-val">8</p>
+        <p class="stat-sub">Clinical variables</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Target variable</p>
+        <p class="stat-val">Outcome</p>
+        <p class="stat-sub">Binary (0 / 1)</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Diabetic cases</p>
+        <p class="stat-val">268</p>
+        <p class="stat-sub">34.9% of dataset</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Non-diabetic</p>
+        <p class="stat-val">500</p>
+        <p class="stat-sub">65.1% of dataset</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-key">Age range</p>
+        <p class="stat-val">21 – 81 yr</p>
+        <p class="stat-sub">Mean: 33.2 yr</p>
+      </div>
+    </div>
+
+    <!-- 03 Variables -->
+    <p class="section-label">03 &mdash; Variables Used</p>
+    <div class="content-block">
+      <table class="var-table">
+        <thead>
+          <tr>
+            <th>Variable</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Pregnancies</td><td><span class="badge">Numeric</span></td><td>Number of times pregnant</td></tr>
+          <tr><td>Glucose</td><td><span class="badge">Numeric</span></td><td>Plasma glucose concentration (2h oral glucose tolerance test), mg/dL</td></tr>
+          <tr><td>BloodPressure</td><td><span class="badge">Numeric</span></td><td>Diastolic blood pressure, mm Hg</td></tr>
+          <tr><td>SkinThickness</td><td><span class="badge">Numeric</span></td><td>Triceps skinfold thickness, mm</td></tr>
+          <tr><td>Insulin</td><td><span class="badge">Numeric</span></td><td>2-hour serum insulin, μU/mL</td></tr>
+          <tr><td>BMI</td><td><span class="badge">Numeric</span></td><td>Body mass index — weight (kg) / height (m²)</td></tr>
+          <tr><td>DiabetesPedigreeFunction</td><td><span class="badge">Numeric</span></td><td>Likelihood of diabetes based on family history (0.078 – 2.42)</td></tr>
+          <tr><td>Age</td><td><span class="badge">Numeric</span></td><td>Age of the patient in years</td></tr>
+          <tr><td>Outcome</td><td><span class="badge badge-target">Target</span></td><td>1 = Diabetic, 0 = Not diabetic</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 04 Data Preparation -->
+    <p class="section-label">04 &mdash; Data Preparation</p>
+    <div class="content-block">
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">01</span>
+          <div class="step-body">
+            <span class="step-title">Target separation</span>
+            <span class="step-desc">The <code>Outcome</code> column was isolated as the target variable (y). The remaining 8 clinical columns formed the feature matrix (X).</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">02</span>
+          <div class="step-body">
+            <span class="step-title">Train / Test split</span>
+            <span class="step-desc">The dataset was split into <strong>80% training (614 records)</strong> and <strong>20% test (154 records)</strong> using <code>train_test_split</code> with <code>random_state=42</code> for reproducibility.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">03</span>
+          <div class="step-body">
+            <span class="step-title">Feature scaling — StandardScaler</span>
+            <span class="step-desc">All features were standardized using <strong>StandardScaler</strong> (zero mean, unit variance). The scaler was fitted exclusively on the training set and then applied to both train and test sets to prevent data leakage. Scaling is essential for Logistic Regression because it uses gradient-based optimization that is sensitive to feature magnitude.</span>
+          </div>
+        </div>
+        <div class="step">
+          <span class="step-num">04</span>
+          <div class="step-body">
+            <span class="step-title">Model training</span>
+            <span class="step-desc">Scikit-learn's <strong>LogisticRegression</strong> was fitted on the scaled training set. The model learns one coefficient per feature, estimating the log-odds of diabetes. The default L2 regularization helps prevent overfitting on the relatively small dataset.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 Model Performance -->
+    <p class="section-label">05 &mdash; Model Performance</p>
+    <div class="metrics-grid">
+      <div class="metric-item">
+        <p class="metric-key">Accuracy</p>
+        <p class="metric-val">75.32%</p>
+        <p class="metric-desc">Overall share of correct predictions across both classes on the test set.</p>
+      </div>
+      <div class="metric-item">
+        <p class="metric-key">AUC — ROC</p>
+        <p class="metric-val">0.8147</p>
+        <p class="metric-desc">Area under the ROC curve — measures the model's ability to distinguish between classes across all thresholds.</p>
+      </div>
+      <div class="metric-item">
+        <p class="metric-key">Test set</p>
+        <p class="metric-val">154 records</p>
+        <p class="metric-desc">20% of the dataset held out for unbiased evaluation (never seen during training).</p>
+      </div>
+      <div class="metric-item">
+        <p class="metric-key">Threshold</p>
+        <p class="metric-val">0.50</p>
+        <p class="metric-desc">Default decision boundary — probabilities ≥ 0.5 are classified as diabetic (class 1).</p>
+      </div>
+    </div>
+
+    <!-- Per-class metrics -->
+    <div class="content-block">
+      <p class="block-title">Per-Class Metrics</p>
+      <table class="class-table">
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Precision</th>
+            <th>Recall</th>
+            <th>F1-Score</th>
+            <th>Support</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>0 — Not Diabetic</td>
+            <td>0.814</td>
+            <td>0.798</td>
+            <td>0.806</td>
+            <td>99</td>
+          </tr>
+          <tr>
+            <td>1 — Diabetic</td>
+            <td>0.649</td>
+            <td>0.673</td>
+            <td>0.661</td>
+            <td>55</td>
+          </tr>
+          <tr>
+            <td>Weighted avg</td>
+            <td>0.755</td>
+            <td>0.753</td>
+            <td>0.754</td>
+            <td>154</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 06 Confusion Matrix -->
+    <p class="section-label">06 &mdash; Confusion Matrix</p>
+    <div class="chart-wrap">
+      <p class="chart-meta">Test set · 154 samples · Threshold = 0.50</p>
+      <div class="cm-visual">
+        <div class="cm-cell tn">
+          <p class="cm-num">79</p>
+          <p class="cm-label">True Negative</p>
+        </div>
+        <div class="cm-cell fp">
+          <p class="cm-num">20</p>
+          <p class="cm-label">False Positive</p>
+        </div>
+        <div class="cm-cell fn">
+          <p class="cm-num">18</p>
+          <p class="cm-label">False Negative</p>
+        </div>
+        <div class="cm-cell tp">
+          <p class="cm-num">37</p>
+          <p class="cm-label">True Positive</p>
+        </div>
+      </div>
+      <p class="cm-axis" style="margin-top:0.8rem;">Columns: Predicted · Rows: Actual</p>
+    </div>
+    <div class="content-block">
+      <ul>
+        <li><strong>True Negative (79):</strong> correctly predicted as not diabetic.</li>
+        <li><strong>True Positive (37):</strong> correctly predicted as diabetic.</li>
+        <li><strong>False Positive (20):</strong> predicted diabetic, but actually not — type I error.</li>
+        <li><strong>False Negative (18):</strong> predicted not diabetic, but actually is — type II error, clinically the most costly.</li>
+      </ul>
+    </div>
+
+    <!-- 07 ROC Curve -->
+    <p class="section-label">07 &mdash; ROC Curve</p>
+    <div class="chart-wrap">
+      <p class="chart-meta">ROC Curve · AUC = 0.8147 · Test set · 154 samples</p>
+      <div class="chart-container-sm">
+        <canvas id="rocChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 08 Probability Distribution -->
+    <p class="section-label">08 &mdash; Predicted Probabilities — Test Set</p>
+    <div class="chart-wrap">
+      <p class="chart-meta">P(Diabetic) per sample · Actual class indicated by color · 154 samples</p>
+      <div class="chart-container">
+        <canvas id="probChart"></canvas>
+      </div>
+    </div>
+
+    <!-- 09 Interpretation -->
+    <p class="section-label">09 &mdash; Interpretation of Results</p>
+    <div class="content-block">
+      <p class="block-title">What do the metrics mean?</p>
+      <p>The model achieves an accuracy of <strong>75.32%</strong> and an AUC of <strong>0.8147</strong> on the test set. The AUC is the more meaningful metric here — it measures how well the model ranks diabetic patients above non-diabetic ones, regardless of the classification threshold. A value of 0.81 indicates strong discriminative ability.</p>
+      <p>The <strong>precision for diabetic patients (0.649)</strong> means that when the model predicts diabetes, it is correct about 65% of the time. The <strong>recall of 0.673</strong> means the model identifies 67.3% of all actual diabetic patients — missing about 1 in 3, which is the primary concern in a clinical setting.</p>
+    </div>
+    <div class="content-block">
+      <p class="block-title">Key observations</p>
+      <ul>
+        <li>The model performs better at identifying non-diabetic patients (F1 = 0.806) than diabetic ones (F1 = 0.661), reflecting the class imbalance in the dataset (65% vs 35%).</li>
+        <li><strong>Glucose</strong> and <strong>BMI</strong> are the strongest predictors of diabetes in this dataset.</li>
+        <li>The 18 false negatives are clinically significant — these are patients who have diabetes but were classified as healthy, delaying potential treatment.</li>
+        <li>Lowering the classification threshold (e.g., to 0.35) would increase recall at the cost of more false positives — a reasonable trade-off in medical screening.</li>
+      </ul>
+    </div>
+    <div class="content-block">
+      <p class="block-title">Limitations</p>
+      <ul>
+        <li>The dataset contains zeroes in fields like Glucose, BMI, and BloodPressure that likely represent missing values — these were not imputed in this implementation.</li>
+        <li>The dataset is limited to female patients of Pima Indian heritage, so the model may not generalize well to other populations.</li>
+        <li>A more advanced model (e.g. Random Forest, XGBoost) would likely improve recall on the diabetic class significantly.</li>
+      </ul>
+    </div>
+
+    <!-- Prediction Result -->
+    {% if result is not none %}
+    <p class="section-label">Prediction Result</p>
+    <div class="result-block">
+      <span class="result-label">Classification</span>
+      <span class="result-class">{{ result }}</span>
+      <span class="result-prob">P(Diabetic) = {{ prob }}%</span>
+      <span class="result-note">Based on 8 clinical input variables · Threshold = 0.50</span>
+    </div>
+    {% endif %}
+
+    <!-- 10 Prediction Form -->
+    <p class="section-label">10 &mdash; Prediction Form</p>
+    <form action="/logisticRApplication" method="POST">
+
+      <div class="form-card" style="margin-bottom:0.5rem;">
+        <p class="group-label">Patient Information</p>
+        <div class="fields-row">
+          <div class="field">
+            <label for="pregnancies">Pregnancies</label>
+            <span class="hint">Number of times pregnant (0 – 17)</span>
+            <input type="number" id="pregnancies" name="pregnancies" min="0" max="20" required />
+          </div>
+          <div class="field">
+            <label for="age">Age</label>
+            <span class="hint">Years (21 – 81)</span>
+            <input type="number" id="age" name="age" min="21" max="100" required />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-card" style="margin-bottom:0.5rem;">
+        <p class="group-label">Clinical Measurements</p>
+        <div class="fields-row">
+          <div class="field">
+            <label for="glucose">Glucose</label>
+            <span class="hint">Plasma glucose, mg/dL (e.g. 117)</span>
+            <input type="number" step="0.1" id="glucose" name="glucose" min="0" max="300" required />
+          </div>
+          <div class="field">
+            <label for="bloodpressure">Blood Pressure</label>
+            <span class="hint">Diastolic, mm Hg (e.g. 72)</span>
+            <input type="number" step="0.1" id="bloodpressure" name="bloodpressure" min="0" max="200" required />
+          </div>
+        </div>
+        <div class="fields-row">
+          <div class="field">
+            <label for="skinthickness">Skin Thickness</label>
+            <span class="hint">Triceps skinfold, mm (e.g. 23)</span>
+            <input type="number" step="0.1" id="skinthickness" name="skinthickness" min="0" max="100" required />
+          </div>
+          <div class="field">
+            <label for="insulin">Insulin</label>
+            <span class="hint">2-hour serum insulin, μU/mL (e.g. 30)</span>
+            <input type="number" step="0.1" id="insulin" name="insulin" min="0" max="900" required />
+          </div>
+        </div>
+        <div class="fields-row">
+          <div class="field">
+            <label for="bmi">BMI</label>
+            <span class="hint">Body Mass Index (e.g. 32.0)</span>
+            <input type="number" step="0.1" id="bmi" name="bmi" min="0" max="80" required />
+          </div>
+          <div class="field">
+            <label for="dpf">Diabetes Pedigree Function</label>
+            <span class="hint">Family history score (e.g. 0.351)</span>
+            <input type="number" step="0.001" id="dpf" name="dpf" min="0" max="3" required />
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-predict">Run Prediction</button>
+    </form>
+
+  </main>
+
+  <footer>
+    <p class="footer-label">Group Members</p>
+    <div class="members">
+      <span class="member">Elkin Yamith Almonacid López</span>
+      <span class="member">Brayan David Cuitiva Umbarila</span>
+      <span class="member">Brayan Yair Mendez Rodriguez</span>
+    </div>
+    <p class="university">Universidad de Cundinamarca</p>
+  </footer>
+
+</div>
+
+<script>
+  // ── ROC Curve ──
+  const rocData = [{"fpr":0.0,"tpr":0.0},{"fpr":0.0,"tpr":0.0182},{"fpr":0.0,"tpr":0.0364},{"fpr":0.0101,"tpr":0.0364},{"fpr":0.0101,"tpr":0.0727},{"fpr":0.0202,"tpr":0.2909},{"fpr":0.0404,"tpr":0.2909},{"fpr":0.0404,"tpr":0.4182},{"fpr":0.0505,"tpr":0.4182},{"fpr":0.0505,"tpr":0.4545},{"fpr":0.0606,"tpr":0.5091},{"fpr":0.0707,"tpr":0.5091},{"fpr":0.0707,"tpr":0.5273},{"fpr":0.0808,"tpr":0.5273},{"fpr":0.0808,"tpr":0.5636},{"fpr":0.0909,"tpr":0.5818},{"fpr":0.1111,"tpr":0.5818},{"fpr":0.1111,"tpr":0.6},{"fpr":0.1414,"tpr":0.6},{"fpr":0.1414,"tpr":0.6545},{"fpr":0.202,"tpr":0.6727},{"fpr":0.2525,"tpr":0.6727},{"fpr":0.2525,"tpr":0.6909},{"fpr":0.2727,"tpr":0.6909},{"fpr":0.2727,"tpr":0.7091},{"fpr":0.3333,"tpr":0.7455},{"fpr":0.3535,"tpr":0.7455},{"fpr":0.3535,"tpr":0.7636},{"fpr":0.4141,"tpr":0.7636},{"fpr":0.4141,"tpr":0.8545},{"fpr":0.4343,"tpr":0.8727},{"fpr":0.4646,"tpr":0.8727},{"fpr":0.4646,"tpr":0.8909},{"fpr":0.5556,"tpr":0.8909},{"fpr":0.5556,"tpr":0.9455},{"fpr":0.5758,"tpr":0.9636},{"fpr":0.6465,"tpr":0.9636},{"fpr":0.6465,"tpr":0.9818},{"fpr":0.899,"tpr":0.9818},{"fpr":1.0,"tpr":1.0}];
+
+  const rocCtx = document.getElementById('rocChart').getContext('2d');
+  new Chart(rocCtx, {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          label: 'ROC Curve (AUC = 0.8147)',
+          data: rocData.map(d => ({ x: d.fpr, y: d.tpr })),
+          borderColor: '#111110',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+        },
+        {
+          label: 'Random classifier',
+          data: [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+          borderColor: '#d9d7d0',
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870', boxWidth: 12, padding: 16 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` FPR: ${ctx.parsed.x.toFixed(3)}  |  TPR: ${ctx.parsed.y.toFixed(3)}`
+          },
+          titleFont: { family: "'IBM Plex Mono'", size: 10 },
+          bodyFont: { family: "'IBM Plex Sans'", size: 10 },
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: 'False Positive Rate', font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          ticks: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          grid: { color: '#e8e6e0' },
+          min: 0, max: 1
+        },
+        y: {
+          title: { display: true, text: 'True Positive Rate', font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          ticks: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          grid: { color: '#e8e6e0' },
+          min: 0, max: 1
+        }
+      }
+    }
+  });
+
+  // ── Probability Distribution ──
+  const scatterRaw = [{"actual":0,"prob":0.2774},{"actual":0,"prob":0.186},{"actual":0,"prob":0.1147},{"actual":0,"prob":0.1714},{"actual":0,"prob":0.4684},{"actual":0,"prob":0.4399},{"actual":0,"prob":0.0162},{"actual":0,"prob":0.6596},{"actual":0,"prob":0.5362},{"actual":0,"prob":0.7706},{"actual":1,"prob":0.2539},{"actual":0,"prob":0.8914},{"actual":1,"prob":0.3329},{"actual":0,"prob":0.3129},{"actual":0,"prob":0.0853},{"actual":1,"prob":0.3863},{"actual":0,"prob":0.1394},{"actual":0,"prob":0.0765},{"actual":1,"prob":0.8578},{"actual":1,"prob":0.5552},{"actual":0,"prob":0.2084},{"actual":0,"prob":0.0791},{"actual":0,"prob":0.5312},{"actual":0,"prob":0.0954},{"actual":0,"prob":0.535},{"actual":1,"prob":0.8799},{"actual":0,"prob":0.1245},{"actual":0,"prob":0.0311},{"actual":1,"prob":0.248},{"actual":0,"prob":0.1195},{"actual":1,"prob":0.9072},{"actual":1,"prob":0.8673},{"actual":1,"prob":0.7577},{"actual":1,"prob":0.833},{"actual":0,"prob":0.6205},{"actual":1,"prob":0.6859},{"actual":1,"prob":0.9654},{"actual":1,"prob":0.2498},{"actual":0,"prob":0.5087},{"actual":1,"prob":0.7236},{"actual":0,"prob":0.0712},{"actual":0,"prob":0.5943},{"actual":0,"prob":0.5818},{"actual":1,"prob":0.3306},{"actual":0,"prob":0.0288},{"actual":1,"prob":0.507},{"actual":1,"prob":0.6502},{"actual":0,"prob":0.2251},{"actual":0,"prob":0.3697},{"actual":0,"prob":0.9558},{"actual":0,"prob":0.0496},{"actual":1,"prob":0.6638},{"actual":1,"prob":0.8097},{"actual":1,"prob":0.2481},{"actual":0,"prob":0.0943},{"actual":0,"prob":0.0427},{"actual":0,"prob":0.771},{"actual":0,"prob":0.006},{"actual":0,"prob":0.413},{"actual":1,"prob":0.7475},{"actual":1,"prob":0.7357},{"actual":0,"prob":0.3481},{"actual":0,"prob":0.2006},{"actual":1,"prob":0.2161},{"actual":0,"prob":0.0779},{"actual":0,"prob":0.6172},{"actual":0,"prob":0.052},{"actual":1,"prob":0.726},{"actual":0,"prob":0.039},{"actual":1,"prob":0.7152},{"actual":0,"prob":0.6759},{"actual":0,"prob":0.072},{"actual":0,"prob":0.1829},{"actual":1,"prob":0.1149},{"actual":0,"prob":0.0928},{"actual":0,"prob":0.5149},{"actual":0,"prob":0.1682},{"actual":0,"prob":0.1433},{"actual":0,"prob":0.1341},{"actual":0,"prob":0.2338},{"actual":1,"prob":0.6504},{"actual":1,"prob":0.1483},{"actual":0,"prob":0.0631},{"actual":0,"prob":0.3707},{"actual":0,"prob":0.262},{"actual":1,"prob":0.8303},{"actual":1,"prob":0.8968},{"actual":1,"prob":0.3098},{"actual":0,"prob":0.1241},{"actual":0,"prob":0.0858},{"actual":0,"prob":0.0676},{"actual":0,"prob":0.2366},{"actual":0,"prob":0.0044},{"actual":1,"prob":0.5399},{"actual":0,"prob":0.5126},{"actual":0,"prob":0.6444},{"actual":0,"prob":0.3685},{"actual":0,"prob":0.1314},{"actual":1,"prob":0.6127},{"actual":0,"prob":0.085},{"actual":0,"prob":0.7162},{"actual":0,"prob":0.0643},{"actual":1,"prob":0.7764},{"actual":0,"prob":0.4976},{"actual":1,"prob":0.6434},{"actual":0,"prob":0.2183},{"actual":0,"prob":0.2607},{"actual":1,"prob":0.7366},{"actual":1,"prob":0.1361},{"actual":1,"prob":0.5427},{"actual":0,"prob":0.1005},{"actual":0,"prob":0.3173},{"actual":0,"prob":0.0208},{"actual":1,"prob":0.7282},{"actual":0,"prob":0.1773},{"actual":0,"prob":0.3369},{"actual":1,"prob":0.7673},{"actual":0,"prob":0.2215},{"actual":0,"prob":0.066},{"actual":0,"prob":0.5722},{"actual":0,"prob":0.0594},{"actual":0,"prob":0.2977},{"actual":1,"prob":0.2399},{"actual":0,"prob":0.0833},{"actual":0,"prob":0.2617},{"actual":0,"prob":0.417},{"actual":1,"prob":0.0416},{"actual":1,"prob":0.8743},{"actual":1,"prob":0.969},{"actual":0,"prob":0.7278},{"actual":1,"prob":0.701},{"actual":1,"prob":0.8503},{"actual":0,"prob":0.0899},{"actual":1,"prob":0.4182},{"actual":1,"prob":0.8148},{"actual":0,"prob":0.1123},{"actual":1,"prob":0.1561},{"actual":1,"prob":0.8499},{"actual":1,"prob":0.7992},{"actual":0,"prob":0.0137},{"actual":0,"prob":0.0959},{"actual":0,"prob":0.0408},{"actual":0,"prob":0.2014},{"actual":0,"prob":0.3782},{"actual":0,"prob":0.1246},{"actual":0,"prob":0.2921},{"actual":1,"prob":0.1496},{"actual":0,"prob":0.0222},{"actual":0,"prob":0.4234},{"actual":1,"prob":0.7458},{"actual":0,"prob":0.1261},{"actual":0,"prob":0.4865},{"actual":1,"prob":0.2265},{"actual":0,"prob":0.2049}];
+
+  const neg = scatterRaw.filter(d => d.actual === 0).map((d, i) => ({ x: i, y: d.prob }));
+  const pos = scatterRaw.filter(d => d.actual === 1).map((d, i) => ({ x: i, y: d.prob }));
+
+  const probCtx = document.getElementById('probChart').getContext('2d');
+  new Chart(probCtx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Not Diabetic (0)',
+          data: scatterRaw.map((d, i) => d.actual === 0 ? { x: i, y: d.prob } : null).filter(Boolean),
+          backgroundColor: 'rgba(17,17,16,0.35)',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+        {
+          label: 'Diabetic (1)',
+          data: scatterRaw.map((d, i) => d.actual === 1 ? { x: i, y: d.prob } : null).filter(Boolean),
+          backgroundColor: 'rgba(17,17,16,0.9)',
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointStyle: 'triangle',
+        },
+        {
+          label: 'Threshold (0.5)',
+          type: 'line',
+          data: [{ x: 0, y: 0.5 }, { x: 153, y: 0.5 }],
+          borderColor: '#c0392b',
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870', boxWidth: 12, padding: 16 }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              if (ctx.datasetIndex < 2)
+                return ` Sample #${ctx.parsed.x + 1}  |  P(Diabetic) = ${ctx.parsed.y.toFixed(4)}`;
+              return null;
+            }
+          },
+          titleFont: { family: "'IBM Plex Mono'", size: 10 },
+          bodyFont: { family: "'IBM Plex Sans'", size: 10 },
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Sample index', font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          ticks: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          grid: { color: '#e8e6e0' },
+          min: 0, max: 153
+        },
+        y: {
+          title: { display: true, text: 'P(Diabetic)', font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          ticks: { font: { family: "'IBM Plex Mono'", size: 10 }, color: '#7a7870' },
+          grid: { color: '#e8e6e0' },
+          min: 0, max: 1
+        }
+      }
+    }
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
