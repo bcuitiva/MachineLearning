@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 from LinearRegression_Weight import (predecir_peso, actual_values, predicted_values)
 import LinearRegression_Weight
 import logisticRegressionDiabetes
+import RidgeClassifierStudents
 
 app = Flask(__name__)
 
@@ -113,3 +114,31 @@ def applicationLR():
         prob = round(probability * 100, 2)
 
     return render_template('logisticRegressionApplication.html', result=result, prob=prob)
+
+@app.route('/RidgeClassifierMenu')
+def RCMenu():
+    return render_template('RidgeClassifierMenu.html')
+
+@app.route('/RidgeClassifierConcepts')
+def RCConcepts():
+    return render_template('RidgeClassifierConcepts.html')
+
+@app.route('/RidgeClassifier', methods=['GET', 'POST'])
+def RCApp():
+    prediction_text = None
+    if request.method == 'POST':
+        data = [
+            float(request.form['age']),
+            float(request.form['sem1_ap']),
+            float(request.form['sem2_ap']),
+            float(request.form['sem1_grade']),
+            float(request.form['sem2_grade']),
+        ]
+        result = RidgeClassifierStudents.predict_student(data)
+        prediction_text = 'Graduate / Enrolled' if result == 1 else 'Dropout'
+
+    return render_template('RidgeClassifierApplication.html',
+    prediction_text=prediction_text,
+    roc_points=RidgeClassifierStudents.roc_points,
+    auc=round(RidgeClassifierStudents.auc_val, 3)
+)
