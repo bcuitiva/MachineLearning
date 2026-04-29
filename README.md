@@ -166,7 +166,7 @@ Open the application in your browser and navigate through the available sections
 ## Project Structure
 
 ```
-MachineLearnig/
+MachineLearning/
 │
 ├── app.py                                          # Flask routes
 ├── LinearRegression.py                             # Weight prediction model
